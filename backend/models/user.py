@@ -109,13 +109,13 @@ class User:
         Remove a recipe from favorites.
         
         Args:
-            recipe_id (int): ID of the recipe to remove
+            recipe_id (int or str): ID of the recipe to remove (can be a string for Edamam recipes)
         
         Returns:
             bool: True if removed successfully, False if not in favorites
         """
         initial_count = len(self.favorites)
-        self.favorites = [fav for fav in self.favorites if fav.get('id') != recipe_id]
+        self.favorites = [fav for fav in self.favorites if str(fav.get('id')) != str(recipe_id)]
         
         if len(self.favorites) < initial_count:
             self._save_favorites()
@@ -153,12 +153,12 @@ class User:
         Check if a recipe is in the user's favorites.
         
         Args:
-            recipe_id (int): ID of the recipe to check
+            recipe_id (int or str): ID of the recipe to check (can be a string for Edamam recipes)
         
         Returns:
             bool: True if in favorites, False otherwise
         """
-        return any(fav.get('id') == recipe_id for fav in self.favorites)
+        return any(str(fav.get('id')) == str(recipe_id) for fav in self.favorites)
     
     def update_preferences(self, preferences):
         """

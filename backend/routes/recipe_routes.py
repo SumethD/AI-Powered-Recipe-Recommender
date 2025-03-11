@@ -12,8 +12,8 @@ from models.recipe import Recipe
 
 recipe_bp = Blueprint('recipes', __name__)
 
-@recipe_bp.route('/by-ingredients', methods=['POST'])
-def find_recipes_by_ingredients():
+@recipe_bp.route('/ingredients', methods=['GET', 'POST'])
+def find_recipes_by_ingredients_endpoint():
     """
     Find recipes based on available ingredients
     
@@ -23,6 +23,7 @@ def find_recipes_by_ingredients():
     - 'ranking': ranking strategy (optional, default: 1)
       1 = maximize used ingredients, 2 = minimize missing ingredients
     - 'ignore_pantry': whether to ignore pantry items (optional, default: false)
+    - 'apiProvider': API provider to use (optional, default: from environment)
     
     Returns:
     - List of recipes matching the ingredients
@@ -31,13 +32,35 @@ def find_recipes_by_ingredients():
     current_app.logger.info("Recipe search by ingredients endpoint accessed")
     
     # Get and validate request data
-    data = request.get_json()
-    
-    if not data or 'ingredients' not in data:
-        current_app.logger.warning("No ingredients provided in request")
-        return jsonify({"error": "No ingredients provided"}), 400
-    
-    ingredients = data['ingredients']
+    if request.method == 'POST':
+        data = request.get_json()
+        
+        if not data or 'ingredients' not in data:
+            current_app.logger.warning("No ingredients provided in request")
+            return jsonify({"error": "No ingredients provided"}), 400
+        
+        ingredients = data['ingredients']
+        limit = data.get('limit', 10)
+        ranking = data.get('ranking', 1)
+        ignore_pantry = data.get('ignore_pantry', False)
+        
+        # Check for apiProvider in camelCase (frontend convention) or api_provider in snake_case (backend convention)
+        api_provider = data.get('apiProvider', data.get('api_provider', None))
+        current_app.logger.info(f"API Provider from request: {api_provider}")
+    else:  # GET method
+        ingredients_str = request.args.get('ingredients', '')
+        if not ingredients_str:
+            current_app.logger.warning("No ingredients provided in request")
+            return jsonify({"error": "No ingredients provided"}), 400
+            
+        ingredients = ingredients_str.split(',')
+        limit = request.args.get('limit', 10, type=int)
+        ranking = request.args.get('ranking', 1, type=int)
+        ignore_pantry = request.args.get('ignorePantry', 'false').lower() == 'true'
+        
+        # Check for apiProvider in camelCase (frontend convention) or api_provider in snake_case (backend convention)
+        api_provider = request.args.get('apiProvider', request.args.get('api_provider', None))
+        current_app.logger.info(f"API Provider from request: {api_provider}")
     
     # Validate ingredients
     if not ingredients or not isinstance(ingredients, list):
@@ -51,61 +74,21 @@ def find_recipes_by_ingredients():
         current_app.logger.warning("No valid ingredients provided after cleaning")
         return jsonify({"error": "No valid ingredients provided"}), 400
     
-    # Get optional parameters
-    limit = data.get('limit', 10)
-    ranking = data.get('ranking', 1)
-    ignore_pantry = data.get('ignore_pantry', False)
-    
-    # Validate optional parameters
-    try:
-        limit = int(limit)
-        if limit < 1 or limit > 100:
-            limit = 10
-    except (ValueError, TypeError):
-        limit = 10
+    # Log the parameters
+    current_app.logger.info(f"Searching for recipes with ingredients: {ingredients}")
+    current_app.logger.info(f"Parameters: limit={limit}, ranking={ranking}, ignore_pantry={ignore_pantry}, api_provider={api_provider}")
     
     try:
-        ranking = int(ranking)
-        if ranking not in [1, 2]:
-            ranking = 1
-    except (ValueError, TypeError):
-        ranking = 1
-    
-    if not isinstance(ignore_pantry, bool):
-        ignore_pantry = False
-    
-    # Log the ingredients being searched
-    current_app.logger.info(f"Searching for recipes with ingredients: {', '.join(ingredients)}")
-    current_app.logger.info(f"Parameters: limit={limit}, ranking={ranking}, ignore_pantry={ignore_pantry}")
-    
-    try:
-        # Get recipes from Spoonacular
-        raw_recipes = get_recipes_by_ingredients(
+        # Get recipes from the recipe service
+        recipes = get_recipes_by_ingredients(
             ingredients=ingredients,
             number=limit,
             ranking=ranking,
-            ignore_pantry=ignore_pantry
+            ignore_pantry=ignore_pantry,
+            api_provider=api_provider
         )
         
-        # Convert to Recipe objects and then to dictionaries
-        recipes = [Recipe.from_api_response(recipe).to_dict() for recipe in raw_recipes]
-        
-        # Add a summary of used and missed ingredients
-        for recipe in recipes:
-            recipe['used_ingredient_count'] = len(recipe['used_ingredients'])
-            recipe['missed_ingredient_count'] = len(recipe['missed_ingredients'])
-            
-            # Extract just the names for a simplified view
-            recipe['used_ingredient_names'] = [
-                ingredient.get('name', 'Unknown') 
-                for ingredient in recipe['used_ingredients']
-            ]
-            recipe['missed_ingredient_names'] = [
-                ingredient.get('name', 'Unknown') 
-                for ingredient in recipe['missed_ingredients']
-            ]
-        
-        current_app.logger.info(f"Successfully found {len(recipes)} recipes")
+        current_app.logger.info(f"Found {len(recipes)} recipes")
         
         # Return the response
         return jsonify({
@@ -114,13 +97,23 @@ def find_recipes_by_ingredients():
             "recipes": recipes
         })
     except Exception as e:
-        current_app.logger.error(f"Error in recipe search: {str(e)}")
-        return jsonify({"error": str(e)}), getattr(e, 'status_code', 500)
+        current_app.logger.error(f"Error in recipe search by ingredients: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
-@recipe_bp.route('/<recipe_id>', methods=['GET'])
+@recipe_bp.route('/<path:recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     """
     Get detailed information about a specific recipe
+    
+    Path parameters:
+    - recipe_id: ID of the recipe (can be a string for Edamam recipes)
+    
+    Query parameters:
+    - user_id: User ID for checking if the recipe is in favorites (optional)
+    - apiProvider: API provider to use (optional, default: edamam)
     
     Returns:
     - Detailed recipe information including ingredients, instructions, and nutrition
@@ -130,8 +123,12 @@ def get_recipe(recipe_id):
     # Get user ID from query parameter (if provided)
     user_id = request.args.get('user_id')
     
+    # Always use Edamam API
+    api_provider = 'edamam'
+    current_app.logger.info(f"Using API Provider: {api_provider}")
+    
     try:
-        recipe = get_recipe_details(recipe_id)
+        recipe = get_recipe_details(recipe_id, api_provider)
         current_app.logger.info(f"Successfully retrieved recipe: {recipe.get('title', 'Unknown')}")
         
         # Check if the recipe is in the user's favorites
@@ -165,6 +162,7 @@ def search_recipes_endpoint():
     - diet: Diet type (optional)
     - intolerances: Comma-separated list of intolerances (optional)
     - limit: Number of results to return (optional, default: 10)
+    - apiProvider: API provider to use (optional, default: from environment)
     
     Returns:
     - List of recipes matching the search criteria
@@ -177,6 +175,10 @@ def search_recipes_endpoint():
     diet = request.args.get('diet')
     intolerances = request.args.get('intolerances')
     limit = request.args.get('limit', 10)
+    
+    # Check for apiProvider in camelCase (frontend convention) or api_provider in snake_case (backend convention)
+    api_provider = request.args.get('apiProvider', request.args.get('api_provider', None))
+    current_app.logger.info(f"API Provider from request: {api_provider}")
     
     # Validate query
     if not query:
@@ -193,7 +195,7 @@ def search_recipes_endpoint():
     
     # Log the search parameters
     current_app.logger.info(f"Searching for recipes with query: {query}")
-    current_app.logger.info(f"Parameters: cuisine={cuisine}, diet={diet}, intolerances={intolerances}, limit={limit}")
+    current_app.logger.info(f"Parameters: cuisine={cuisine}, diet={diet}, intolerances={intolerances}, limit={limit}, api_provider={api_provider}")
     
     try:
         # Get recipes from the recipe service
@@ -202,7 +204,8 @@ def search_recipes_endpoint():
             cuisine=cuisine,
             diet=diet,
             intolerances=intolerances,
-            number=limit
+            number=limit,
+            api_provider=api_provider
         )
         
         current_app.logger.info(f"Successfully found {len(recipes)} recipes")
@@ -228,6 +231,7 @@ def get_random_recipes_endpoint():
     Query parameters:
     - tags: Comma-separated list of tags (optional)
     - limit: Number of results to return (optional, default: 10)
+    - apiProvider: API provider to use (optional, default: from environment)
     
     Returns:
     - List of random recipes
@@ -237,6 +241,10 @@ def get_random_recipes_endpoint():
     # Get query parameters
     tags = request.args.get('tags')
     limit = request.args.get('limit', 10)
+    
+    # Check for apiProvider in camelCase (frontend convention) or api_provider in snake_case (backend convention)
+    api_provider = request.args.get('apiProvider', request.args.get('api_provider', None))
+    current_app.logger.info(f"API Provider from request: {api_provider}")
     
     # Validate limit
     try:
@@ -248,13 +256,14 @@ def get_random_recipes_endpoint():
     
     # Log the parameters
     current_app.logger.info(f"Getting random recipes with tags: {tags}")
-    current_app.logger.info(f"Parameters: limit={limit}")
+    current_app.logger.info(f"Parameters: limit={limit}, api_provider={api_provider}")
     
     try:
         # Get recipes from the recipe service
         recipes = get_random_recipes(
             tags=tags,
-            number=limit
+            number=limit,
+            api_provider=api_provider
         )
         
         current_app.logger.info(f"Successfully retrieved {len(recipes)} random recipes")

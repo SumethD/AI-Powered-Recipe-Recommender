@@ -4,7 +4,7 @@ import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
-from services.spoonacular_service import get_recipes_by_ingredients, get_recipe_details, search_recipes, get_random_recipes
+from services.recipe_service import get_recipes_by_ingredients, get_recipe_details, search_recipes, get_random_recipes
 from services.user_service import get_user, get_user_favorites, add_favorite, remove_favorite, update_user_preferences, get_user_preferences
 from routes.chat_routes import chat_bp
 from routes.recipe_routes import recipe_bp
@@ -15,8 +15,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Load environment variables
 load_dotenv()
 
+# Force API_PROVIDER to be 'edamam'
+os.environ['API_PROVIDER'] = 'edamam'
+
 # Print environment variables for debugging
-print(f"API_PROVIDER: {os.getenv('API_PROVIDER', 'not set')}")
+print(f"API_PROVIDER: {os.getenv('API_PROVIDER', 'edamam')}")
 print(f"EDAMAM_API_KEY: {os.getenv('EDAMAM_API_KEY', 'not set')}")
 print(f"EDAMAM_APP_ID: {os.getenv('EDAMAM_APP_ID', 'not set')}")
 
@@ -40,20 +43,29 @@ app.register_blueprint(chat_bp, url_prefix='/api/chat')
 # Add a test endpoint to check if the edamam_service is being imported correctly
 @app.route('/api/test-edamam', methods=['GET'])
 def test_edamam():
+    """Test endpoint to verify Edamam API connectivity"""
     try:
-        import services.edamam_service as edamam_service
+        # Import the Edamam service
+        from services.edamam_service import search
+        
+        # Try to search for a simple query
+        results = search("pasta", 1)
+        
+        # Return success with the results
         return jsonify({
             "success": True,
-            "message": "Edamam service imported successfully",
-            "api_provider": os.getenv('API_PROVIDER', 'not set'),
-            "edamam_api_key": os.getenv('EDAMAM_API_KEY', 'not set')[:5] + "...",
-            "edamam_app_id": os.getenv('EDAMAM_APP_ID', 'not set')
+            "message": "Edamam API is working correctly",
+            "results": results
         })
     except Exception as e:
+        # Log the error
+        app.logger.error(f"Error testing Edamam API: {str(e)}")
+        
+        # Return error response
         return jsonify({
             "success": False,
-            "message": f"Error importing edamam_service: {str(e)}"
-        })
+            "message": f"Error testing Edamam API: {str(e)}"
+        }), 500
 
 # Add a test endpoint to check if the recipe_service is being used correctly
 @app.route('/api/test-recipe-service', methods=['GET'])
@@ -212,7 +224,7 @@ def random_recipes():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/recipes/<int:recipe_id>', methods=['GET'])
+@app.route('/api/recipes/<path:recipe_id>', methods=['GET'])
 def recipe_details(recipe_id):
     try:
         recipe = get_recipe_details(recipe_id)
@@ -253,7 +265,7 @@ def add_favorite_route(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/users/<user_id>/favorites/<int:recipe_id>', methods=['DELETE'])
+@app.route('/api/users/<user_id>/favorites/<path:recipe_id>', methods=['DELETE'])
 def remove_favorite_route(user_id, recipe_id):
     try:
         remove_favorite(user_id, recipe_id)

@@ -77,8 +77,11 @@ const Favorites: React.FC = () => {
     setFilteredFavorites(sorted);
   }, [favorites, searchTerm, sortBy, sortDirection]);
 
-  const handleRecipeClick = (recipeId: number) => {
-    navigate(`/recipe/${recipeId}`);
+  const handleRecipeClick = (recipeId: number | string) => {
+    // Log the recipe ID to the console instead of navigating
+    console.log("Favorite recipe clicked:", recipeId);
+    
+    // No navigation to recipe details page
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {

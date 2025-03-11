@@ -30,6 +30,7 @@ import {
   Chat as ChatIcon,
   Restaurant as RestaurantIcon,
   Logout as LogoutIcon,
+  Fastfood as FastfoodIcon,
 } from '@mui/icons-material';
 import { useUser } from '../../context/UserContext';
 

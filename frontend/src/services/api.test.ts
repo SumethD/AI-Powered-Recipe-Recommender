@@ -57,13 +57,11 @@ describe('API Services', () => {
       mockedAxios.get.mockResolvedValueOnce(mockResponse);
 
       const recipeId = 1;
-      const userId = 'user123';
-      const result = await recipeApi.getRecipeDetails(recipeId, userId);
+      const apiProvider = 'edamam';
+      const result = await recipeApi.getRecipeDetails(recipeId, apiProvider);
 
       expect(mockedAxios.get).toHaveBeenCalledWith(`/recipes/${recipeId}`, {
-        params: {
-          user_id: userId,
-        },
+        params: { apiProvider }
       });
       expect(result).toEqual(mockResponse.data);
     });

@@ -59,7 +59,7 @@ def remove_favorite(user_id, recipe_id):
     
     Args:
         user_id (str): The user's ID
-        recipe_id (int): ID of the recipe to remove
+        recipe_id (int or str): ID of the recipe to remove (can be a string for Edamam recipes)
     
     Returns:
         bool: True if removed successfully, False if not in favorites
@@ -73,7 +73,7 @@ def is_favorite(user_id, recipe_id):
     
     Args:
         user_id (str): The user's ID
-        recipe_id (int): ID of the recipe to check
+        recipe_id (int or str): ID of the recipe to check (can be a string for Edamam recipes)
     
     Returns:
         bool: True if in favorites, False otherwise

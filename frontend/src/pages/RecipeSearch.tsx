@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Container,
@@ -26,6 +26,9 @@ import {
   Tab,
   Tabs,
   SelectChangeEvent,
+  Tooltip,
+  Switch,
+  FormControlLabel,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -38,11 +41,43 @@ import { useRecipes } from '../context/RecipeContext';
 import { useUser } from '../context/UserContext';
 import { recipeApi } from '../services/api';
 import { Recipe } from '../context/RecipeContext';
+import { styled } from '@mui/material/styles';
 
 interface LocationState {
   ingredients?: string[];
   query?: string;
+  activeTab?: number;
+  apiProvider?: string;
 }
+
+// Styled components
+const StyledCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  position: 'relative',
+  cursor: 'pointer',
+  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+  '&:hover': {
+    transform: 'translateY(-4px)',
+    boxShadow: theme.shadows[8],
+  },
+}));
+
+const StyledCardMedia = styled(CardMedia)({
+  paddingTop: '56.25%', // 16:9 aspect ratio
+  backgroundSize: 'cover',
+  cursor: 'pointer',
+});
+
+const StyledCardContent = styled(CardContent)({
+  flexGrow: 1,
+  cursor: 'pointer',
+});
+
+const StyledCardActions = styled(CardActionArea)({
+  justifyContent: 'space-between',
+});
 
 const RecipeSearch: React.FC = () => {
   const location = useLocation();
@@ -65,6 +100,11 @@ const RecipeSearch: React.FC = () => {
   
   const [isFiltersLoading, setIsFiltersLoading] = useState<boolean>(false);
   const [filtersError, setFiltersError] = useState<string | null>(null);
+
+  // State for API provider
+  const [apiProvider, setApiProvider] = useState('edamam'); // Default to edamam
+  
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Load filters data on mount
   useEffect(() => {
@@ -116,14 +156,24 @@ const RecipeSearch: React.FC = () => {
     // Check if we have search parameters from navigation
     const state = location.state as LocationState;
     if (state) {
+      // Restore API provider if provided
+      if (state.apiProvider) {
+        setApiProvider(state.apiProvider);
+      }
+      
       if (state.ingredients && state.ingredients.length > 0) {
         setIngredientsList(state.ingredients);
         setSearchTab(0); // Switch to ingredients tab
-        handleSearchByIngredients(state.ingredients);
+        handleSearchByIngredients(state.ingredients, state.apiProvider);
       } else if (state.query) {
         setSearchQuery(state.query);
         setSearchTab(1); // Switch to query tab
-        handleSearchByQuery(state.query);
+        handleSearchByQuery(state.query, state.apiProvider);
+      }
+      
+      // Restore active tab if provided
+      if (state.activeTab !== undefined) {
+        setSearchTab(state.activeTab);
       }
     }
   }, [location.state]);
@@ -163,40 +213,45 @@ const RecipeSearch: React.FC = () => {
     }
   };
 
-  const handleSearchByIngredients = (ingredients: string[] = ingredientsList) => {
+  const handleSearchByIngredients = (ingredients: string[] = ingredientsList, customApiProvider?: string) => {
     if (ingredients.length === 0) return;
-    searchByIngredients(ingredients);
+    searchByIngredients(ingredients, customApiProvider || apiProvider);
   };
 
-  const handleSearchByQuery = (query: string = searchQuery) => {
+  const handleSearchByQuery = (query: string = searchQuery, customApiProvider?: string) => {
     if (query.trim() === '') return;
     
     const intolerancesString = selectedIntolerances.length > 0 
       ? selectedIntolerances.join(',') 
       : undefined;
     
-    searchRecipes(query, selectedCuisine, selectedDiet, intolerancesString);
+    searchRecipes(query, selectedCuisine, selectedDiet, intolerancesString, customApiProvider || apiProvider);
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setSearchTab(newValue);
   };
 
-  const handleRecipeClick = (recipeId: number) => {
-    // Navigate to recipe details while preserving the search state
-    navigate(`/recipe/${recipeId}`, {
-      state: {
-        returnToSearch: true,
-        ingredients: ingredientsList,
-        query: searchQuery,
-        searchTab: searchTab
-      }
-    });
+  const handleRecipeClick = (recipeId: number | string) => {
+    // Log the recipe ID to the console instead of navigating
+    console.log("Recipe clicked:", recipeId);
+    
+    // Find the recipe in the recipes array
+    const recipe = recipes.find(r => r.id === recipeId);
+    if (recipe) {
+      console.log("Recipe details:", recipe);
+    }
+    
+    // No navigation to recipe details page
   };
 
   const handleToggleFavorite = (recipe: Recipe, event: React.MouseEvent) => {
     event.stopPropagation();
-    toggleFavorite(recipe);
+    if (user) {
+      toggleFavorite(recipe);
+    } else {
+      navigate('/login');
+    }
   };
 
   const handleCuisineChange = (event: SelectChangeEvent) => {
@@ -210,6 +265,10 @@ const RecipeSearch: React.FC = () => {
   const handleIntolerancesChange = (event: SelectChangeEvent<string[]>) => {
     const value = event.target.value;
     setSelectedIntolerances(typeof value === 'string' ? value.split(',') : value);
+  };
+
+  const handleApiProviderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setApiProvider(event.target.checked ? 'edamam' : 'spoonacular');
   };
 
   return (
@@ -231,6 +290,20 @@ const RecipeSearch: React.FC = () => {
           <Tab label="Search by Query" />
         </Tabs>
         
+        {/* API Provider Toggle */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={apiProvider === 'edamam'}
+                onChange={handleApiProviderChange}
+                color="primary"
+              />
+            }
+            label={`API: ${apiProvider === 'edamam' ? 'Edamam' : 'Spoonacular'}`}
+          />
+        </Box>
+
         {searchTab === 0 ? (
           <>
             <Grid container spacing={2} alignItems="center">
@@ -436,52 +509,13 @@ const RecipeSearch: React.FC = () => {
           <Grid container spacing={3}>
             {recipes.map((recipe) => (
               <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-                    },
-                  }}
-                  onClick={() => handleRecipeClick(recipe.id)}
-                >
-                  {user && (
-                    <IconButton
-                      sx={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                        bgcolor: 'rgba(255, 255, 255, 0.7)',
-                        '&:hover': {
-                          bgcolor: 'rgba(255, 255, 255, 0.9)',
-                        },
-                        zIndex: 10,
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleFavorite(recipe, e);
-                      }}
-                    >
-                      {recipe.isFavorite ? (
-                        <FavoriteIcon color="error" />
-                      ) : (
-                        <FavoriteBorderIcon />
-                      )}
-                    </IconButton>
-                  )}
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={recipe.image}
-                    alt={recipe.title}
+                <StyledCard>
+                  <StyledCardMedia
+                    image={recipe.image || 'https://via.placeholder.com/300x200?text=No+Image'}
+                    title={recipe.title}
+                    onClick={() => handleRecipeClick(recipe.id)}
                   />
-                  <CardContent>
+                  <StyledCardContent onClick={() => handleRecipeClick(recipe.id)}>
                     <Typography gutterBottom variant="h6" component="div" noWrap>
                       {recipe.title}
                     </Typography>
@@ -506,8 +540,21 @@ const RecipeSearch: React.FC = () => {
                         Ready in {recipe.readyInMinutes} minutes
                       </Typography>
                     )}
-                  </CardContent>
-                </Card>
+                  </StyledCardContent>
+                  <StyledCardActions>
+                    <Tooltip title={user ? 'Add to favorites' : 'Login to save favorites'}>
+                      <IconButton 
+                        onClick={(e) => handleToggleFavorite(recipe, e)}
+                        color="primary"
+                      >
+                        {recipe.isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                      </IconButton>
+                    </Tooltip>
+                    <Typography variant="body2" color="text.secondary">
+                      {recipe.healthScore && `Health Score: ${recipe.healthScore}`}
+                    </Typography>
+                  </StyledCardActions>
+                </StyledCard>
               </Grid>
             ))}
           </Grid>

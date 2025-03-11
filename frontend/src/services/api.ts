@@ -13,26 +13,66 @@ const api = axios.create({
 // Recipe API
 export const recipeApi = {
   // Search recipes by ingredients
-  searchByIngredients: async (ingredients: string[], limit = 10, ranking = 1, ignorePantry = false) => {
+  searchByIngredients: async (ingredients: string[], limit = 10, ranking = 1, ignorePantry = false, apiProvider: string = 'edamam') => {
     try {
-      const response = await api.get('/recipes/ingredients', {
-        params: {
-          ingredients: ingredients.join(','),
-          limit,
-          ranking,
-          ignorePantry,
-        },
+      console.log(`API call: Searching by ingredients: ${ingredients.join(', ')} with provider: ${apiProvider}`);
+      
+      // Add a timeout to the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await api.post('/recipes/ingredients', {
+        ingredients,
+        limit,
+        ranking,
+        ignore_pantry: ignorePantry,
+        apiProvider
+      }, {
+        signal: controller.signal
       });
-      return response.data;
-    } catch (error) {
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
+      
+      console.log("Search by ingredients response status:", response.status);
+      console.log("Search by ingredients response data:", response.data);
+      
+      // Check if the response has the expected format
+      if (response.data && response.data.success && response.data.recipes) {
+        return response.data.recipes;
+      } else if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.error("Unexpected response format:", response.data);
+        return [];
+      }
+    } catch (error: any) {
       console.error('Error searching recipes by ingredients:', error);
-      throw error;
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+        throw new Error('Request timed out. The server took too long to respond.');
+      } else if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+        throw new Error(`Server error: ${error.response.data?.error || error.response.statusText || 'Unknown error'}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('No response received:', error.request);
+        throw new Error('No response from server. Please check your connection and try again.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        throw error;
+      }
     }
   },
 
   // Search recipes by query
-  searchRecipes: async (query: string, cuisine?: string, diet?: string, intolerances?: string, limit = 10) => {
+  searchRecipes: async (query: string, cuisine?: string, diet?: string, intolerances?: string, limit = 10, apiProvider: string = 'edamam') => {
     try {
+      console.log("Searching recipes with query:", query);
       const response = await api.get('/recipes/search', {
         params: {
           query,
@@ -40,9 +80,21 @@ export const recipeApi = {
           diet,
           intolerances,
           limit,
+          apiProvider
         },
       });
-      return response.data;
+      
+      console.log("Search recipes response:", response.data);
+      
+      // Check if the response has the expected format
+      if (response.data && response.data.success && response.data.recipes) {
+        return response.data.recipes;
+      } else if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.error("Unexpected response format:", response.data);
+        return [];
+      }
     } catch (error) {
       console.error('Error searching recipes:', error);
       throw error;
@@ -50,15 +102,28 @@ export const recipeApi = {
   },
 
   // Get random recipes
-  getRandomRecipes: async (tags?: string, limit = 10) => {
+  getRandomRecipes: async (limit = 10, tags?: string, apiProvider: string = 'edamam') => {
     try {
+      console.log("Getting random recipes");
       const response = await api.get('/recipes/random', {
         params: {
-          tags,
           limit,
+          tags,
+          apiProvider
         },
       });
-      return response.data;
+      
+      console.log("Random recipes response:", response.data);
+      
+      // Check if the response has the expected format
+      if (response.data && response.data.success && response.data.recipes) {
+        return response.data.recipes;
+      } else if (response.data && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.error("Unexpected response format:", response.data);
+        return [];
+      }
     } catch (error) {
       console.error('Error getting random recipes:', error);
       throw error;
@@ -66,29 +131,60 @@ export const recipeApi = {
   },
 
   // Get recipe details
-  getRecipeDetails: async (recipeId: number, userId?: string) => {
+  getRecipeDetails: async (recipeId: number | string, apiProvider: string = 'edamam') => {
+    if (!recipeId) {
+      console.error('Recipe ID is required');
+      throw new Error('Recipe ID is required');
+    }
+
     try {
-      if (!recipeId || isNaN(recipeId)) {
-        throw new Error('Invalid recipe ID');
-      }
+      // Convert recipeId to string to ensure compatibility
+      const recipeIdStr = String(recipeId);
+      console.log(`Getting details for recipe: ${recipeIdStr} with provider: ${apiProvider}`);
       
-      const response = await api.get(`/recipes/${recipeId}`, {
-        params: {
-          user_id: userId,
-        },
+      // Add a timeout to the request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await api.get(`/recipes/${recipeIdStr}`, {
+        params: { apiProvider },
+        signal: controller.signal
       });
       
-      if (!response.data) {
-        throw new Error('Recipe not found');
-      }
+      // Clear the timeout
+      clearTimeout(timeoutId);
       
-      return response.data;
-    } catch (error) {
-      console.error('Error getting recipe details:', error);
-      if (error instanceof Error) {
-        throw new Error(`Failed to get recipe details: ${error.message}`);
+      console.log("Recipe details response status:", response.status);
+      console.log("Recipe details response data:", response.data);
+      
+      // Check if the response has the expected format
+      if (response.data && response.data.success && response.data.recipe) {
+        return response.data.recipe;
+      } else if (response.data && !Array.isArray(response.data) && typeof response.data === 'object') {
+        return response.data;
       } else {
-        throw new Error('Failed to get recipe details');
+        console.error("Unexpected response format:", response.data);
+        return null;
+      }
+    } catch (error: any) {
+      console.error(`Error getting recipe details for ${recipeId}:`, error);
+      
+      // Provide more specific error messages
+      if (error.code === 'ECONNABORTED' || error.name === 'AbortError') {
+        throw new Error('Request timed out. The server took too long to respond.');
+      } else if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+        throw new Error(`Server error: ${error.response.data?.error || error.response.statusText || 'Unknown error'}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        console.error('No response received:', error.request);
+        throw new Error('No response from server. Please check your connection and try again.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        throw error;
       }
     }
   },
@@ -129,31 +225,32 @@ export const recipeApi = {
 
 // User API
 export const userApi = {
-  // Get user favorites
-  getFavorites: async (userId: string, limit?: number, sortBy = 'added_at', reverse = true) => {
+  // Get user details
+  getUser: async (userId: string) => {
     try {
-      const response = await api.get('/recipes/favorites', {
-        params: {
-          user_id: userId,
-          limit,
-          sort_by: sortBy,
-          reverse,
-        },
-      });
+      const response = await api.get(`/users/${userId}`);
       return response.data;
     } catch (error) {
-      console.error('Error getting favorites:', error);
+      console.error('Error getting user details:', error);
       throw error;
     }
   },
 
-  // Add recipe to favorites
+  // Get user favorites
+  getFavorites: async (userId: string) => {
+    try {
+      const response = await api.get(`/users/${userId}/favorites`);
+      return response.data.favorites;
+    } catch (error) {
+      console.error('Error getting user favorites:', error);
+      throw error;
+    }
+  },
+
+  // Add favorite
   addFavorite: async (userId: string, recipe: any) => {
     try {
-      const response = await api.post('/recipes/favorites', {
-        user_id: userId,
-        recipe,
-      });
+      const response = await api.post(`/users/${userId}/favorites`, { recipe });
       return response.data;
     } catch (error) {
       console.error('Error adding favorite:', error);
@@ -161,14 +258,10 @@ export const userApi = {
     }
   },
 
-  // Remove recipe from favorites
-  removeFavorite: async (userId: string, recipeId: number) => {
+  // Remove favorite
+  removeFavorite: async (userId: string, recipeId: number | string) => {
     try {
-      const response = await api.delete(`/recipes/favorites/${recipeId}`, {
-        params: {
-          user_id: userId,
-        },
-      });
+      const response = await api.delete(`/users/${userId}/favorites/${recipeId}`);
       return response.data;
     } catch (error) {
       console.error('Error removing favorite:', error);
@@ -242,8 +335,11 @@ export const chatApi = {
   },
 };
 
-export default {
+// Create a default export object
+const apiService = {
   recipeApi,
   userApi,
   chatApi,
-}; 
+};
+
+export default apiService; 

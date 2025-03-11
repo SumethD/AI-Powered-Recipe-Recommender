@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { RecipeProvider } from './context/RecipeContext';
 import { ChatProvider } from './context/ChatContext';
 import { UserProvider } from './context/UserContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Import fonts
 import '@fontsource/roboto/300.css';
@@ -32,11 +33,12 @@ import Footer from './components/layout/Footer';
 // Import pages
 import Home from './pages/Home';
 import RecipeSearch from './pages/RecipeSearch';
-import RecipeDetails from './pages/RecipeDetails';
 import ChatAssistant from './pages/ChatAssistant';
 import UserProfile from './pages/UserProfile';
 import Favorites from './pages/Favorites';
 import NotFound from './pages/NotFound';
+import TestRecipeFlow from './components/TestRecipeFlow';
+import ApiTest from './components/ApiTest';
 
 function App() {
   return (
@@ -52,10 +54,11 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/search" element={<RecipeSearch />} />
-                    <Route path="/recipe/:id" element={<RecipeDetails />} />
                     <Route path="/chat" element={<ChatAssistant />} />
                     <Route path="/profile" element={<UserProfile />} />
                     <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/test-recipe-flow" element={<TestRecipeFlow />} />
+                    <Route path="/api-test" element={<ApiTest />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>

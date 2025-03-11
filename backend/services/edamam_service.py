@@ -2,15 +2,14 @@ import os
 import logging
 import requests
 import json
-import random
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Configure API key
-EDAMAM_APP_ID = os.getenv("EDAMAM_APP_ID", "test_app_id")
-EDAMAM_API_KEY = os.getenv("EDAMAM_API_KEY", "0122383f3fdc2f5e06169fcc935c550a")  # Use the provided key as default
+EDAMAM_APP_ID = os.getenv("EDAMAM_APP_ID")
+EDAMAM_API_KEY = os.getenv("EDAMAM_API_KEY")
 print(f"Using Edamam API key: {EDAMAM_API_KEY}")
 print(f"Using Edamam APP ID: {EDAMAM_APP_ID}")
 BASE_URL = "https://api.edamam.com/api/recipes/v2"
@@ -18,159 +17,6 @@ BASE_URL = "https://api.edamam.com/api/recipes/v2"
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Sample recipes for fallback
-SAMPLE_RECIPES = [
-    {
-        "id": "sample1",
-        "title": "Simple Pasta with Tomato Sauce",
-        "image": "https://www.edamam.com/web-img/a29/a293566f53abc01f4715925c5ada6e7a.jpg",
-        "sourceUrl": "https://www.example.com/pasta-recipe",
-        "sourceName": "Sample Recipes",
-        "readyInMinutes": 30,
-        "servings": 4,
-        "healthScore": 80,
-        "spoonacularScore": 90,
-        "pricePerServing": 2.5,
-        "diets": ["balanced"],
-        "cuisines": ["Italian"],
-        "dishTypes": ["main course"],
-        "extendedIngredients": [
-            {
-                "id": 1,
-                "name": "pasta",
-                "amount": 400,
-                "unit": "g",
-                "original": "400g pasta"
-            },
-            {
-                "id": 2,
-                "name": "tomato sauce",
-                "amount": 500,
-                "unit": "ml",
-                "original": "500ml tomato sauce"
-            },
-            {
-                "id": 3,
-                "name": "olive oil",
-                "amount": 2,
-                "unit": "tbsp",
-                "original": "2 tbsp olive oil"
-            },
-            {
-                "id": 4,
-                "name": "garlic",
-                "amount": 2,
-                "unit": "cloves",
-                "original": "2 cloves garlic, minced"
-            },
-            {
-                "id": 5,
-                "name": "basil",
-                "amount": 1,
-                "unit": "handful",
-                "original": "1 handful fresh basil leaves"
-            },
-            {
-                "id": 6,
-                "name": "parmesan",
-                "amount": 50,
-                "unit": "g",
-                "original": "50g grated parmesan"
-            }
-        ],
-        "summary": "A simple and delicious pasta dish with tomato sauce, garlic, and fresh basil.",
-        "instructions": "1. Cook pasta according to package instructions. 2. In a pan, heat olive oil and sauté garlic until fragrant. 3. Add tomato sauce and simmer for 10 minutes. 4. Drain pasta and mix with sauce. 5. Garnish with fresh basil and grated parmesan.",
-        "nutrition": {
-            "nutrients": [
-                {
-                    "name": "Calories",
-                    "amount": 450,
-                    "unit": "kcal",
-                    "percentOfDailyNeeds": 22.5
-                }
-            ]
-        }
-    },
-    {
-        "id": "sample2",
-        "title": "Chicken Stir Fry",
-        "image": "https://www.edamam.com/web-img/5f5/5f51c89f832d50da2df035478d5b7d0c.jpg",
-        "sourceUrl": "https://www.example.com/chicken-stir-fry",
-        "sourceName": "Sample Recipes",
-        "readyInMinutes": 25,
-        "servings": 4,
-        "healthScore": 85,
-        "spoonacularScore": 92,
-        "pricePerServing": 3.0,
-        "diets": ["high-protein"],
-        "cuisines": ["Asian"],
-        "dishTypes": ["main course"],
-        "extendedIngredients": [
-            {
-                "id": 1,
-                "name": "chicken breast",
-                "amount": 500,
-                "unit": "g",
-                "original": "500g chicken breast, sliced"
-            },
-            {
-                "id": 2,
-                "name": "bell peppers",
-                "amount": 2,
-                "unit": "",
-                "original": "2 bell peppers, sliced"
-            },
-            {
-                "id": 3,
-                "name": "broccoli",
-                "amount": 1,
-                "unit": "head",
-                "original": "1 head broccoli, cut into florets"
-            },
-            {
-                "id": 4,
-                "name": "soy sauce",
-                "amount": 3,
-                "unit": "tbsp",
-                "original": "3 tbsp soy sauce"
-            },
-            {
-                "id": 5,
-                "name": "garlic",
-                "amount": 3,
-                "unit": "cloves",
-                "original": "3 cloves garlic, minced"
-            },
-            {
-                "id": 6,
-                "name": "ginger",
-                "amount": 1,
-                "unit": "tbsp",
-                "original": "1 tbsp grated ginger"
-            },
-            {
-                "id": 7,
-                "name": "vegetable oil",
-                "amount": 2,
-                "unit": "tbsp",
-                "original": "2 tbsp vegetable oil"
-            }
-        ],
-        "summary": "A quick and healthy chicken stir fry with colorful vegetables and a savory sauce.",
-        "instructions": "1. Heat oil in a wok or large frying pan. 2. Add chicken and cook until browned. 3. Add garlic and ginger, stir for 30 seconds. 4. Add vegetables and stir fry for 5 minutes. 5. Add soy sauce and cook for another 2 minutes. 6. Serve hot with rice.",
-        "nutrition": {
-            "nutrients": [
-                {
-                    "name": "Calories",
-                    "amount": 320,
-                    "unit": "kcal",
-                    "percentOfDailyNeeds": 16
-                }
-            ]
-        }
-    }
-]
 
 def get_recipes_by_ingredients(ingredients, number=10):
     """
@@ -184,13 +30,12 @@ def get_recipes_by_ingredients(ingredients, number=10):
         list: List of recipe objects
     """
     try:
-        logger.info(f"Searching for recipes with ingredients: {ingredients}")
+        logger.info(f"Edamam service: Searching for recipes with ingredients: {ingredients}")
         
         # Check if API key is available
-        if not EDAMAM_API_KEY:
-            logger.error("Edamam API key not found")
-            logger.info("Using sample recipes as fallback")
-            return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+        if not EDAMAM_API_KEY or not EDAMAM_APP_ID:
+            logger.error("Edamam API key or App ID not found")
+            raise Exception("Edamam API key or App ID not configured")
         
         # Prepare the API endpoint and parameters
         params = {
@@ -202,74 +47,68 @@ def get_recipes_by_ingredients(ingredients, number=10):
         }
         
         # Make the API request
-        logger.info(f"Making request to Edamam API: {BASE_URL}")
-        response = requests.get(BASE_URL, params=params)
+        logger.info(f"Making request to Edamam API: {BASE_URL} with params: {params}")
         
-        # Log the response status code
-        logger.info(f"Response status code: {response.status_code}")
-        
-        # If the response is not successful, log the response content
-        if response.status_code != 200:
-            logger.error(f"Error response: {response.text}")
-            logger.info("Using sample recipes as fallback")
-            return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
-        
-        # Parse and return the results
-        data = response.json()
-        hits = data.get("hits", [])
-        recipes = []
-        
-        for hit in hits[:number]:  # Limit to requested number
-            recipe = hit.get("recipe", {})
+        try:
+            response = requests.get(BASE_URL, params=params, timeout=30)
             
-            # Transform to match our expected format
-            transformed_recipe = {
-                "id": recipe.get("uri", "").split("_")[-1],  # Extract ID from URI
-                "title": recipe.get("label", ""),
-                "image": recipe.get("image", ""),
-                "sourceUrl": recipe.get("url", ""),
-                "sourceName": recipe.get("source", ""),
-                "readyInMinutes": recipe.get("totalTime", 0),
-                "servings": recipe.get("yield", 0),
-                "healthScore": 0,  # Not directly available
-                "spoonacularScore": 0,  # Not available
-                "pricePerServing": 0,  # Not available
-                "diets": recipe.get("dietLabels", []),
-                "cuisines": recipe.get("cuisineType", []),
-                "dishTypes": recipe.get("dishType", []),
-                "extendedIngredients": [
-                    {
-                        "id": i,
-                        "name": ingredient.get("food", ""),
-                        "amount": ingredient.get("quantity", 0),
-                        "unit": ingredient.get("measure", ""),
-                        "original": ingredient.get("text", "")
-                    }
-                    for i, ingredient in enumerate(recipe.get("ingredients", []))
-                ],
-                "summary": ", ".join(recipe.get("ingredientLines", [])),
-                "instructions": "",  # Not directly available in basic response
-                "nutrition": {
-                    "nutrients": [
-                        {
-                            "name": "Calories",
-                            "amount": recipe.get("calories", 0),
-                            "unit": "kcal",
-                            "percentOfDailyNeeds": 0
-                        }
-                    ]
-                }
-            }
+            # Log the response status code
+            logger.info(f"Response status code: {response.status_code}")
             
-            recipes.append(transformed_recipe)
-        
-        logger.info(f"Found {len(recipes)} recipes")
-        return recipes
+            # If the response is not successful, log the response content
+            if response.status_code != 200:
+                logger.error(f"Error response: {response.text}")
+                raise Exception(f"Edamam API error: {response.status_code} - {response.text}")
+            
+            # Parse and return the results
+            data = response.json()
+            
+            # Check if the response has the expected format
+            if 'hits' not in data:
+                logger.error(f"Unexpected response format: 'hits' not found in response")
+                logger.error(f"Response data: {data}")
+                raise Exception("Unexpected response format from Edamam API")
+                
+            hits = data.get("hits", [])
+            logger.info(f"Received {len(hits)} hits from Edamam API")
+            
+            recipes = []
+            
+            for hit in hits[:number]:  # Limit to requested number
+                recipe = hit.get("recipe", {})
+                
+                # Extract ID from URI
+                recipe_id = recipe.get("uri", "").split("_")[-1]
+                
+                # Normalize the ID to lowercase
+                recipe_id = recipe_id.lower()
+                
+                # Get the recipe title, ensuring it's not empty
+                title = recipe.get("label", "")
+                if not title:
+                    logger.warning(f"Recipe {recipe_id} has no title, using 'Untitled Recipe'")
+                    title = "Untitled Recipe"
+                
+                # Log the recipe for debugging
+                logger.info(f"Found recipe: ID={recipe_id}, Title={title}")
+                
+                # Transform the recipe using the common function
+                transformed_recipe = transform_edamam_recipe(recipe, recipe_id)
+                recipes.append(transformed_recipe)
+            
+            logger.info(f"Returning {len(recipes)} recipes")
+            return recipes
+            
+        except requests.exceptions.Timeout:
+            logger.error("Request to Edamam API timed out")
+            raise Exception("Request to Edamam API timed out")
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error: {str(e)}")
+            raise Exception(f"Request error: {str(e)}")
         
     except Exception as e:
         logger.error(f"Error in get_recipes_by_ingredients: {str(e)}")
-        logger.info("Using sample recipes as fallback due to error")
-        return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+        raise Exception(f"Failed to get recipes by ingredients: {str(e)}")
 
 def get_recipe_details(recipe_id):
     """
@@ -284,90 +123,257 @@ def get_recipe_details(recipe_id):
     try:
         logger.info(f"Getting details for recipe ID: {recipe_id}")
         
-        # Check if it's a sample recipe
-        for recipe in SAMPLE_RECIPES:
-            if recipe["id"] == recipe_id:
-                logger.info(f"Found sample recipe with ID: {recipe_id}")
-                return recipe
+        # Validate recipe_id
+        if not recipe_id:
+            logger.error("Empty recipe ID provided")
+            raise Exception("Recipe ID is required")
         
-        # Prepare the API endpoint and parameters
-        uri = f"http://www.edamam.com/ontologies/edamam.owl#recipe_{recipe_id}"
+        # Normalize the recipe ID to lowercase if it's a string
+        if isinstance(recipe_id, str):
+            recipe_id = recipe_id.lower()
+            logger.info(f"Normalized recipe ID to lowercase: {recipe_id}")
+        
+        # Check if API key is available
+        if not EDAMAM_API_KEY or not EDAMAM_APP_ID:
+            logger.error("Edamam API key or App ID not found")
+            raise Exception("Edamam API key or App ID not configured")
+        
+        # For Edamam, we need to construct the full URI for the recipe
+        # The format is: http://www.edamam.com/ontologies/edamam.owl#recipe_{ID}
+        edamam_uri = f"http://www.edamam.com/ontologies/edamam.owl#recipe_{recipe_id}"
+        encoded_uri = requests.utils.quote(edamam_uri)
+        
+        # Method 1: Try to get the recipe using the URI parameter
         params = {
             "type": "public",
             "app_id": EDAMAM_APP_ID,
             "app_key": EDAMAM_API_KEY,
-            "uri": uri,
+            "uri": edamam_uri
         }
         
-        # Make the API request
+        logger.info(f"Making request to Edamam API with URI: {edamam_uri}")
         response = requests.get(BASE_URL, params=params)
         
-        # Log the response status code
         logger.info(f"Response status code: {response.status_code}")
         
-        # If the response is not successful, log the response content
-        if response.status_code != 200:
-            logger.error(f"Error response: {response.text}")
-            logger.info("Using sample recipe as fallback")
-            return SAMPLE_RECIPES[0]  # Return the first sample recipe as fallback
+        if response.status_code == 200:
+            data = response.json()
+            hits = data.get("hits", [])
+            
+            if hits and len(hits) > 0:
+                recipe = hits[0].get("recipe", {})
+                
+                # Verify the recipe has a title
+                recipe_title = recipe.get('label', '')
+                if not recipe_title:
+                    logger.warning(f"Recipe {recipe_id} has no title")
+                    recipe_title = "Untitled Recipe"
+                    recipe['label'] = recipe_title
+                
+                logger.info(f"Successfully retrieved recipe: {recipe_title}")
+                
+                # Transform to match our expected format
+                transformed_recipe = transform_edamam_recipe(recipe, recipe_id)
+                return transformed_recipe
+            else:
+                logger.warning(f"No hits found for recipe ID {recipe_id}")
         
-        # Parse and return the results
-        data = response.json()
-        hits = data.get("hits", [])
+        # If the first method fails, try an alternative approach using a search
+        logger.warning(f"URI method failed, trying search method for recipe ID: {recipe_id}")
         
-        if not hits:
-            logger.error(f"Recipe with ID {recipe_id} not found")
-            logger.info("Using sample recipe as fallback")
-            return SAMPLE_RECIPES[0]  # Return the first sample recipe as fallback
-        
-        recipe = hits[0].get("recipe", {})
-        
-        # Transform to match our expected format
-        transformed_recipe = {
-            "id": recipe_id,
-            "title": recipe.get("label", ""),
-            "image": recipe.get("image", ""),
-            "sourceUrl": recipe.get("url", ""),
-            "sourceName": recipe.get("source", ""),
-            "readyInMinutes": recipe.get("totalTime", 0),
-            "servings": recipe.get("yield", 0),
-            "healthScore": 0,  # Not directly available
-            "spoonacularScore": 0,  # Not available
-            "pricePerServing": 0,  # Not available
-            "diets": recipe.get("dietLabels", []),
-            "cuisines": recipe.get("cuisineType", []),
-            "dishTypes": recipe.get("dishType", []),
-            "extendedIngredients": [
-                {
-                    "id": i,
-                    "name": ingredient.get("food", ""),
-                    "amount": ingredient.get("quantity", 0),
-                    "unit": ingredient.get("measure", ""),
-                    "original": ingredient.get("text", "")
-                }
-                for i, ingredient in enumerate(recipe.get("ingredients", []))
-            ],
-            "summary": ", ".join(recipe.get("ingredientLines", [])),
-            "instructions": "",  # Not directly available in basic response
-            "nutrition": {
-                "nutrients": [
-                    {
-                        "name": "Calories",
-                        "amount": recipe.get("calories", 0),
-                        "unit": "kcal",
-                        "percentOfDailyNeeds": 0
-                    }
-                ]
-            }
+        # Method 2: Try searching for the recipe using the ID as a query (fallback)
+        search_params = {
+            "type": "public",
+            "app_id": EDAMAM_APP_ID,
+            "app_key": EDAMAM_API_KEY,
+            "q": recipe_id,
         }
         
-        logger.info(f"Successfully retrieved details for recipe: {transformed_recipe.get('title', 'Unknown')}")
+        logger.info(f"Making search request to: {BASE_URL}")
+        search_response = requests.get(BASE_URL, params=search_params)
+        
+        if search_response.status_code != 200:
+            logger.error(f"Search request failed with status code {search_response.status_code}")
+            raise Exception(f"Failed to retrieve recipe details: {search_response.status_code}")
+        
+        # Parse and return the results
+        data = search_response.json()
+        hits = data.get("hits", [])
+        
+        if not hits or len(hits) == 0:
+            logger.error(f"No recipes found for ID {recipe_id}")
+            raise Exception(f"Recipe with ID {recipe_id} not found")
+        
+        # Just use the first recipe from the search results as a fallback
+        recipe = hits[0].get("recipe", {})
+        
+        # Verify the recipe has a title
+        recipe_title = recipe.get('label', '')
+        if not recipe_title:
+            logger.warning(f"Recipe {recipe_id} has no title")
+            recipe_title = "Untitled Recipe"
+            recipe['label'] = recipe_title
+        
+        # Transform to match our expected format
+        transformed_recipe = transform_edamam_recipe(recipe, recipe_id)
+        logger.info(f"Found recipe in search results: {transformed_recipe['title']}")
         return transformed_recipe
         
     except Exception as e:
         logger.error(f"Error in get_recipe_details: {str(e)}")
-        logger.info("Using sample recipe as fallback due to error")
-        return SAMPLE_RECIPES[0]  # Return the first sample recipe as fallback
+        raise Exception(f"Failed to get recipe details: {str(e)}")
+
+def transform_edamam_recipe(recipe, recipe_id):
+    """
+    Transform an Edamam recipe to match our expected format.
+    
+    Args:
+        recipe (dict): The Edamam recipe
+        recipe_id (str): The recipe ID
+    
+    Returns:
+        dict: Transformed recipe
+    """
+    try:
+        # Ensure recipe_id is a string and normalized to lowercase
+        recipe_id_str = str(recipe_id).lower()
+        
+        # Get the recipe title, ensuring it's not empty
+        title = recipe.get("label", "")
+        if not title:
+            logger.warning(f"Recipe {recipe_id_str} has no title, using 'Untitled Recipe'")
+            title = "Untitled Recipe"
+        
+        # Get the image URL, with a fallback
+        image = recipe.get("image", "")
+        if not image:
+            logger.warning(f"Recipe {recipe_id_str} has no image, using placeholder")
+            image = "https://via.placeholder.com/300x200?text=No+Image+Available"
+        
+        # Get the source information
+        source_name = recipe.get("source", "")
+        source_url = recipe.get("url", "")
+        
+        # Get the servings
+        servings = recipe.get("yield", 0)
+        if not servings or servings <= 0:
+            servings = 4  # Default to 4 servings if not specified
+        
+        # Get the cooking time (in minutes)
+        total_time = recipe.get("totalTime", 0)
+        if not total_time or total_time <= 0:
+            total_time = 30  # Default to 30 minutes if not specified
+        
+        # Get the ingredients
+        ingredient_lines = recipe.get("ingredientLines", [])
+        ingredients = []
+        
+        for i, line in enumerate(ingredient_lines):
+            ingredients.append({
+                "id": i + 1,
+                "name": line,
+                "amount": 1,
+                "unit": "",
+                "original": line,
+                "image": ""
+            })
+        
+        # Get the diet labels and health labels
+        diet_labels = recipe.get("dietLabels", [])
+        health_labels = recipe.get("healthLabels", [])
+        
+        # Combine diet and health labels
+        diets = diet_labels + health_labels
+        
+        # Get the cuisine type
+        cuisines = recipe.get("cuisineType", [])
+        
+        # Get the dish type
+        dish_types = recipe.get("dishType", [])
+        
+        # Get the nutrition information
+        nutrients = []
+        nutrition = {
+            "nutrients": nutrients,
+            "caloricBreakdown": {
+                "percentProtein": 0,
+                "percentFat": 0,
+                "percentCarbs": 0
+            }
+        }
+        
+        if "totalNutrients" in recipe:
+            total_nutrients = recipe.get("totalNutrients", {})
+            
+            # Extract common nutrients
+            for key, nutrient in total_nutrients.items():
+                if nutrient and isinstance(nutrient, dict):
+                    nutrients.append({
+                        "name": nutrient.get("label", key),
+                        "amount": nutrient.get("quantity", 0),
+                        "unit": nutrient.get("unit", ""),
+                        "percentOfDailyNeeds": 0
+                    })
+            
+            # Calculate caloric breakdown if available
+            calories = total_nutrients.get("ENERC_KCAL", {}).get("quantity", 0)
+            protein = total_nutrients.get("PROCNT", {}).get("quantity", 0)
+            fat = total_nutrients.get("FAT", {}).get("quantity", 0)
+            carbs = total_nutrients.get("CHOCDF", {}).get("quantity", 0)
+            
+            if calories > 0:
+                protein_calories = protein * 4  # 4 calories per gram of protein
+                fat_calories = fat * 9  # 9 calories per gram of fat
+                carb_calories = carbs * 4  # 4 calories per gram of carbs
+                
+                nutrition["caloricBreakdown"] = {
+                    "percentProtein": round((protein_calories / calories) * 100) if protein_calories > 0 else 0,
+                    "percentFat": round((fat_calories / calories) * 100) if fat_calories > 0 else 0,
+                    "percentCarbs": round((carb_calories / calories) * 100) if carb_calories > 0 else 0
+                }
+        
+        # Create the transformed recipe
+        transformed_recipe = {
+            "id": recipe_id_str,
+            "title": title,
+            "image": image,
+            "servings": servings,
+            "readyInMinutes": total_time,
+            "sourceName": source_name,
+            "sourceUrl": source_url,
+            "instructions": source_url,  # Use source URL as instructions link for Edamam
+            "extendedIngredients": ingredients,
+            "diets": diets,
+            "cuisines": cuisines,
+            "dishTypes": dish_types,
+            "summary": recipe.get("summary", f"A delicious {title} recipe."),
+            "nutrition": nutrition,
+            "vegetarian": "Vegetarian" in health_labels,
+            "vegan": "Vegan" in health_labels,
+            "glutenFree": "Gluten-Free" in health_labels,
+            "dairyFree": "Dairy-Free" in health_labels,
+        }
+        
+        return transformed_recipe
+        
+    except Exception as e:
+        logger.error(f"Error transforming Edamam recipe: {str(e)}")
+        
+        # Return a minimal valid recipe to avoid breaking the frontend
+        return {
+            "id": recipe_id,
+            "title": recipe.get("label", "Untitled Recipe"),
+            "image": recipe.get("image", "https://via.placeholder.com/300x200?text=No+Image+Available"),
+            "servings": 4,
+            "readyInMinutes": 30,
+            "sourceUrl": recipe.get("url", ""),
+            "instructions": recipe.get("url", ""),
+            "extendedIngredients": [],
+            "diets": [],
+            "cuisines": [],
+            "dishTypes": [],
+            "summary": f"A recipe for {recipe.get('label', 'food')}.",
+        }
 
 def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
     """
@@ -387,10 +393,9 @@ def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
         logger.info(f"Searching for recipes with query: {query}")
         
         # Check if API key is available
-        if not EDAMAM_API_KEY:
-            logger.error("Edamam API key not found")
-            logger.info("Using sample recipes as fallback")
-            return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+        if not EDAMAM_API_KEY or not EDAMAM_APP_ID:
+            logger.error("Edamam API key or App ID not found")
+            raise Exception("Edamam API key or App ID not configured")
         
         # Prepare the API endpoint and parameters
         params = {
@@ -425,8 +430,7 @@ def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
         # If the response is not successful, log the response content
         if response.status_code != 200:
             logger.error(f"Error response: {response.text}")
-            logger.info("Using sample recipes as fallback")
-            return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+            raise Exception(f"Edamam API error: {response.status_code}")
         
         # Parse and return the results
         data = response.json()
@@ -436,45 +440,23 @@ def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
         for hit in hits[:number]:  # Limit to requested number
             recipe = hit.get("recipe", {})
             
-            # Transform to match our expected format
-            transformed_recipe = {
-                "id": recipe.get("uri", "").split("_")[-1],  # Extract ID from URI
-                "title": recipe.get("label", ""),
-                "image": recipe.get("image", ""),
-                "sourceUrl": recipe.get("url", ""),
-                "sourceName": recipe.get("source", ""),
-                "readyInMinutes": recipe.get("totalTime", 0),
-                "servings": recipe.get("yield", 0),
-                "healthScore": 0,  # Not directly available
-                "spoonacularScore": 0,  # Not available
-                "pricePerServing": 0,  # Not available
-                "diets": recipe.get("dietLabels", []),
-                "cuisines": recipe.get("cuisineType", []),
-                "dishTypes": recipe.get("dishType", []),
-                "extendedIngredients": [
-                    {
-                        "id": i,
-                        "name": ingredient.get("food", ""),
-                        "amount": ingredient.get("quantity", 0),
-                        "unit": ingredient.get("measure", ""),
-                        "original": ingredient.get("text", "")
-                    }
-                    for i, ingredient in enumerate(recipe.get("ingredients", []))
-                ],
-                "summary": ", ".join(recipe.get("ingredientLines", [])),
-                "instructions": "",  # Not directly available in basic response
-                "nutrition": {
-                    "nutrients": [
-                        {
-                            "name": "Calories",
-                            "amount": recipe.get("calories", 0),
-                            "unit": "kcal",
-                            "percentOfDailyNeeds": 0
-                        }
-                    ]
-                }
-            }
+            # Extract ID from URI
+            recipe_id = recipe.get("uri", "").split("_")[-1]
             
+            # Normalize the ID to lowercase
+            recipe_id = recipe_id.lower()
+            
+            # Get the recipe title, ensuring it's not empty
+            title = recipe.get("label", "")
+            if not title:
+                logger.warning(f"Recipe {recipe_id} has no title, using 'Untitled Recipe'")
+                title = "Untitled Recipe"
+            
+            # Log the recipe for debugging
+            logger.info(f"Found recipe: ID={recipe_id}, Title={title}")
+            
+            # Transform the recipe using the common function
+            transformed_recipe = transform_edamam_recipe(recipe, recipe_id)
             recipes.append(transformed_recipe)
         
         logger.info(f"Found {len(recipes)} recipes")
@@ -482,8 +464,7 @@ def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
         
     except Exception as e:
         logger.error(f"Error in search_recipes: {str(e)}")
-        logger.info("Using sample recipes as fallback due to error")
-        return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+        raise Exception(f"Failed to search recipes: {str(e)}")
 
 def get_random_recipes(tags="", number=5):
     """
@@ -500,6 +481,11 @@ def get_random_recipes(tags="", number=5):
         logger.info(f"Getting random recipes with tags: {tags}")
         logger.info(f"Using Edamam API key: {EDAMAM_API_KEY}")
         logger.info(f"Using Edamam APP ID: {EDAMAM_APP_ID}")
+        
+        # Check if API key is available
+        if not EDAMAM_API_KEY or not EDAMAM_APP_ID:
+            logger.error("Edamam API key or App ID not found")
+            raise Exception("Edamam API key or App ID not configured")
         
         # Prepare the API endpoint and parameters
         params = {
@@ -533,8 +519,7 @@ def get_random_recipes(tags="", number=5):
         # If the response is not successful, log the response content
         if response.status_code != 200:
             logger.error(f"Error response: {response.text}")
-            logger.info("Using sample recipes as fallback")
-            return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+            raise Exception(f"Edamam API error: {response.status_code}")
         
         # Parse and return the results
         data = response.json()
@@ -544,45 +529,20 @@ def get_random_recipes(tags="", number=5):
         for hit in hits[:number]:  # Limit to requested number
             recipe = hit.get("recipe", {})
             
-            # Transform to match our expected format
-            transformed_recipe = {
-                "id": recipe.get("uri", "").split("_")[-1],  # Extract ID from URI
-                "title": recipe.get("label", ""),
-                "image": recipe.get("image", ""),
-                "sourceUrl": recipe.get("url", ""),
-                "sourceName": recipe.get("source", ""),
-                "readyInMinutes": recipe.get("totalTime", 0),
-                "servings": recipe.get("yield", 0),
-                "healthScore": 0,  # Not directly available
-                "spoonacularScore": 0,  # Not available
-                "pricePerServing": 0,  # Not available
-                "diets": recipe.get("dietLabels", []),
-                "cuisines": recipe.get("cuisineType", []),
-                "dishTypes": recipe.get("dishType", []),
-                "extendedIngredients": [
-                    {
-                        "id": i,
-                        "name": ingredient.get("food", ""),
-                        "amount": ingredient.get("quantity", 0),
-                        "unit": ingredient.get("measure", ""),
-                        "original": ingredient.get("text", "")
-                    }
-                    for i, ingredient in enumerate(recipe.get("ingredients", []))
-                ],
-                "summary": ", ".join(recipe.get("ingredientLines", [])),
-                "instructions": "",  # Not directly available in basic response
-                "nutrition": {
-                    "nutrients": [
-                        {
-                            "name": "Calories",
-                            "amount": recipe.get("calories", 0),
-                            "unit": "kcal",
-                            "percentOfDailyNeeds": 0
-                        }
-                    ]
-                }
-            }
+            # Extract ID from URI
+            recipe_id = recipe.get("uri", "").split("_")[-1]
             
+            # Get the recipe title, ensuring it's not empty
+            title = recipe.get("label", "")
+            if not title:
+                logger.warning(f"Recipe {recipe_id} has no title, using 'Untitled Recipe'")
+                title = "Untitled Recipe"
+            
+            # Log the recipe for debugging
+            logger.info(f"Found recipe: ID={recipe_id}, Title={title}")
+            
+            # Transform the recipe using the common function
+            transformed_recipe = transform_edamam_recipe(recipe, recipe_id)
             recipes.append(transformed_recipe)
         
         logger.info(f"Retrieved {len(recipes)} random recipes")
@@ -590,8 +550,7 @@ def get_random_recipes(tags="", number=5):
         
     except Exception as e:
         logger.error(f"Error in get_random_recipes: {str(e)}")
-        logger.info("Using sample recipes as fallback due to error")
-        return random.sample(SAMPLE_RECIPES, min(number, len(SAMPLE_RECIPES)))
+        raise Exception(f"Failed to get random recipes: {str(e)}")
 
 def get_cuisines():
     """
