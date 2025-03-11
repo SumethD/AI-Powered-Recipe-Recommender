@@ -391,6 +391,7 @@ def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
     """
     try:
         logger.info(f"Searching for recipes with query: {query}")
+        logger.info(f"Filters - cuisine: {cuisine}, diet: {diet}, intolerances: {intolerances}")
         
         # Check if API key is available
         if not EDAMAM_API_KEY or not EDAMAM_APP_ID:
@@ -407,18 +408,93 @@ def search_recipes(query, cuisine="", diet="", intolerances="", number=10):
         }
         
         # Add optional filters if provided
-        if cuisine:
-            params["cuisineType"] = cuisine
-        if diet:
-            params["diet"] = diet
+        if cuisine and cuisine.lower() != "any":
+            logger.info(f"Adding cuisine filter: {cuisine}")
+            params["cuisineType"] = cuisine.lower()
+        
+        # Handle diet parameter
+        if diet and diet.lower() != "any":
+            diet_lower = diet.lower()
+            logger.info(f"Adding diet filter: {diet_lower}")
+            
+            # Map frontend diet values to Edamam API parameters
+            diet_mapping = {
+                "balanced": "balanced",
+                "high-protein": "high-protein",
+                "high-fiber": "high-fiber",
+                "low-fat": "low-fat",
+                "low-carb": "low-carb",
+                "low-sodium": "low-sodium",
+                "vegan": "vegan",
+                "vegetarian": "vegetarian",
+                "pescatarian": "pescatarian",
+                "paleo": "paleo",
+                "keto": "keto",
+                "low-sugar": "low-sugar",
+                "egg-free": "egg-free",
+                "peanut-free": "peanut-free",
+                "tree-nut-free": "tree-nut-free",
+                "soy-free": "soy-free",
+                "fish-free": "fish-free",
+                "shellfish-free": "shellfish-free"
+            }
+            
+            # Check if the diet is in our mapping
+            if diet_lower in diet_mapping:
+                # Edamam uses 'health' parameter for most diet restrictions
+                if diet_lower in ["vegan", "vegetarian", "pescatarian", "paleo", "keto"]:
+                    params["health"] = diet_mapping[diet_lower]
+                else:
+                    params["diet"] = diet_mapping[diet_lower]
+            else:
+                logger.warning(f"Unknown diet type: {diet_lower}, ignoring")
+        
+        # Handle intolerances parameter
         if intolerances:
             # Edamam uses health parameter for intolerances
             # Format: health=peanut-free, etc.
             intolerances_list = intolerances.split(',')
             health_params = []
+            
             for intolerance in intolerances_list:
-                health_params.append(f"{intolerance.strip().lower()}-free")
-            params["health"] = health_params
+                intolerance = intolerance.strip().lower()
+                logger.info(f"Processing intolerance: {intolerance}")
+                
+                # Map common intolerances to Edamam health parameters
+                intolerance_mapping = {
+                    "dairy": "dairy-free",
+                    "egg": "egg-free",
+                    "gluten": "gluten-free",
+                    "grain": "grain-free",
+                    "peanut": "peanut-free",
+                    "seafood": "seafood-free",
+                    "sesame": "sesame-free",
+                    "shellfish": "shellfish-free",
+                    "soy": "soy-free",
+                    "sulfite": "sulfite-free",
+                    "tree nut": "tree-nut-free",
+                    "wheat": "wheat-free"
+                }
+                
+                if intolerance in intolerance_mapping:
+                    health_params.append(intolerance_mapping[intolerance])
+                else:
+                    # Try to format as {intolerance}-free if not in mapping
+                    health_params.append(f"{intolerance}-free")
+            
+            if health_params:
+                logger.info(f"Adding health parameters: {health_params}")
+                # If we already have a health parameter, append to it
+                if "health" in params:
+                    if isinstance(params["health"], list):
+                        params["health"].extend(health_params)
+                    else:
+                        params["health"] = [params["health"]] + health_params
+                else:
+                    params["health"] = health_params
+        
+        # Log the final parameters
+        logger.info(f"Final API parameters: {params}")
         
         # Make the API request
         logger.info(f"Making request to Edamam API: {BASE_URL}")

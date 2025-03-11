@@ -42,6 +42,7 @@ import { useUser } from '../context/UserContext';
 import { recipeApi } from '../services/api';
 import { Recipe } from '../context/RecipeContext';
 import { styled } from '@mui/material/styles';
+import RecipeCard from '../components/RecipeCard';
 
 interface LocationState {
   ingredients?: string[];
@@ -79,11 +80,26 @@ const StyledCardActions = styled(CardActionArea)({
   justifyContent: 'space-between',
 });
 
+const FavoriteButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  bottom: 8,
+  right: 8,
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  padding: 8,
+  zIndex: 10,
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    transform: 'scale(1.1)',
+  },
+}));
+
 const RecipeSearch: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useUser();
-  const { recipes, isLoading, error, searchByIngredients, searchRecipes, toggleFavorite } = useRecipes();
+  const { recipes, isLoading, error, searchByIngredients, searchRecipes, toggleFavorite, setError } = useRecipes();
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [ingredients, setIngredients] = useState<string>('');
@@ -496,8 +512,38 @@ const RecipeSearch: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : error ? (
-        <Alert severity="error" sx={{ my: 2 }}>
-          {error}
+        <Alert 
+          severity="error" 
+          sx={{ 
+            my: 2,
+            '& .MuiAlert-message': {
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1
+            }
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold">
+            Error searching recipes
+          </Typography>
+          <Typography variant="body2">
+            {error}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Try adjusting your search terms or filters and try again.
+          </Typography>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            color="error" 
+            sx={{ mt: 1, alignSelf: 'flex-start' }}
+            onClick={() => {
+              // Clear the error in the RecipeContext
+              setError(null);
+            }}
+          >
+            Dismiss
+          </Button>
         </Alert>
       ) : recipes.length > 0 ? (
         <>
@@ -509,52 +555,16 @@ const RecipeSearch: React.FC = () => {
           <Grid container spacing={3}>
             {recipes.map((recipe) => (
               <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-                <StyledCard>
-                  <StyledCardMedia
-                    image={recipe.image || 'https://via.placeholder.com/300x200?text=No+Image'}
-                    title={recipe.title}
-                    onClick={() => handleRecipeClick(recipe.id)}
-                  />
-                  <StyledCardContent onClick={() => handleRecipeClick(recipe.id)}>
-                    <Typography gutterBottom variant="h6" component="div" noWrap>
-                      {recipe.title}
-                    </Typography>
-                    
-                    {recipe.usedIngredientCount !== undefined && (
-                      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
-                        <Chip
-                          label={`${recipe.usedIngredientCount} used`}
-                          size="small"
-                          color="success"
-                        />
-                        <Chip
-                          label={`${recipe.missedIngredientCount} missing`}
-                          size="small"
-                          color="error"
-                        />
-                      </Box>
-                    )}
-                    
-                    {recipe.readyInMinutes && (
-                      <Typography variant="body2" color="text.secondary">
-                        Ready in {recipe.readyInMinutes} minutes
-                      </Typography>
-                    )}
-                  </StyledCardContent>
-                  <StyledCardActions>
-                    <Tooltip title={user ? 'Add to favorites' : 'Login to save favorites'}>
-                      <IconButton 
-                        onClick={(e) => handleToggleFavorite(recipe, e)}
-                        color="primary"
-                      >
-                        {recipe.isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                      </IconButton>
-                    </Tooltip>
-                    <Typography variant="body2" color="text.secondary">
-                      {recipe.healthScore && `Health Score: ${recipe.healthScore}`}
-                    </Typography>
-                  </StyledCardActions>
-                </StyledCard>
+                <Box sx={{ position: 'relative' }}>
+                  <RecipeCard recipe={recipe} apiProvider={apiProvider} />
+                  <FavoriteButton 
+                    onClick={(e) => handleToggleFavorite(recipe, e)}
+                    color="primary"
+                    aria-label={recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {recipe.isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                  </FavoriteButton>
+                </Box>
               </Grid>
             ))}
           </Grid>

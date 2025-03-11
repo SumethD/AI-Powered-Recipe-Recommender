@@ -84,6 +84,7 @@ export interface RecipeContextType {
   selectedRecipe: Recipe | null;
   isLoading: boolean;
   error: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
   searchByIngredients: (ingredients: string[], apiProvider?: string) => Promise<void>;
   searchRecipes: (query: string, cuisine?: string, diet?: string, intolerances?: string, apiProvider?: string) => Promise<void>;
   getRandomRecipes: (count?: number) => Promise<void>;
@@ -178,7 +179,7 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
     setError(null);
     
     try {
-      const response = await recipeApi.searchRecipes(query, cuisine, diet, intolerances, 10, 'edamam');
+      const response = await recipeApi.searchRecipes(query, cuisine, diet, intolerances, 10, apiProvider);
       if (response && Array.isArray(response)) {
         // Mark favorites
         const markedRecipes = response.map((recipe: Recipe) => ({
@@ -421,6 +422,7 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
     selectedRecipe,
     isLoading,
     error,
+    setError,
     searchByIngredients,
     searchRecipes,
     getRandomRecipes,

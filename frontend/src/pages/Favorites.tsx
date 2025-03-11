@@ -34,6 +34,24 @@ import {
 } from '@mui/icons-material';
 import { useRecipes } from '../context/RecipeContext';
 import { useUser } from '../context/UserContext';
+import RecipeCard from '../components/RecipeCard';
+import { styled } from '@mui/material/styles';
+
+const DeleteButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  bottom: 8,
+  right: 8,
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+  padding: 8,
+  zIndex: 10,
+  transition: 'all 0.2s ease',
+  '&:hover': {
+    backgroundColor: theme.palette.error.light,
+    color: theme.palette.common.white,
+    transform: 'scale(1.1)',
+  },
+}));
 
 const Favorites: React.FC = () => {
   const navigate = useNavigate();
@@ -197,43 +215,16 @@ const Favorites: React.FC = () => {
         <Grid container spacing={3}>
           {filteredFavorites.map((recipe) => (
             <Grid item key={recipe.id} xs={12} sm={6} md={4}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardActionArea onClick={() => handleRecipeClick(recipe.id)}>
-                  <CardMedia
-                    component="img"
-                    height="140"
-                    image={recipe.image}
-                    alt={recipe.title}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" component="div" gutterBottom noWrap>
-                      {recipe.title}
-                    </Typography>
-                    
-                    {recipe.readyInMinutes && (
-                      <Typography variant="body2" color="text.secondary">
-                        Ready in {recipe.readyInMinutes} minutes
-                      </Typography>
-                    )}
-                    
-                    {recipe.created_at && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        Added on {new Date(recipe.created_at).toLocaleDateString()}
-                      </Typography>
-                    )}
-                  </CardContent>
-                </CardActionArea>
-                
-                <Box sx={{ p: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                  <IconButton
-                    color="secondary"
-                    onClick={(e) => handleRemoveFavorite(recipe, e)}
-                    aria-label="Remove from favorites"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              </Card>
+              <Box sx={{ position: 'relative' }}>
+                <RecipeCard recipe={recipe} />
+                <DeleteButton
+                  color="error"
+                  onClick={(e) => handleRemoveFavorite(recipe, e)}
+                  aria-label="Remove from favorites"
+                >
+                  <DeleteIcon />
+                </DeleteButton>
+              </Box>
             </Grid>
           ))}
         </Grid>
