@@ -80,21 +80,6 @@ const StyledCardActions = styled(CardActionArea)({
   justifyContent: 'space-between',
 });
 
-const FavoriteButton = styled(IconButton)(({ theme }) => ({
-  position: 'absolute',
-  bottom: 8,
-  right: 8,
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-  padding: 8,
-  zIndex: 10,
-  transition: 'all 0.2s ease',
-  '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 1)',
-    transform: 'scale(1.1)',
-  },
-}));
-
 const RecipeSearch: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -261,13 +246,9 @@ const RecipeSearch: React.FC = () => {
     // No navigation to recipe details page
   };
 
-  const handleToggleFavorite = (recipe: Recipe, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (user) {
-      toggleFavorite(recipe);
-    } else {
-      navigate('/login');
-    }
+  const handleToggleFavorite = async (recipe: Recipe, event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent navigation when clicking the favorite button
+    await toggleFavorite(recipe);
   };
 
   const handleCuisineChange = (event: SelectChangeEvent) => {
@@ -555,16 +536,12 @@ const RecipeSearch: React.FC = () => {
           <Grid container spacing={3}>
             {recipes.map((recipe) => (
               <Grid item xs={12} sm={6} md={4} key={recipe.id}>
-                <Box sx={{ position: 'relative' }}>
-                  <RecipeCard recipe={recipe} apiProvider={apiProvider} />
-                  <FavoriteButton 
-                    onClick={(e) => handleToggleFavorite(recipe, e)}
-                    color="primary"
-                    aria-label={recipe.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                  >
-                    {recipe.isFavorite ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                  </FavoriteButton>
-                </Box>
+                <RecipeCard 
+                  recipe={recipe} 
+                  apiProvider={apiProvider} 
+                  user={user}
+                  toggleFavorite={handleToggleFavorite}
+                />
               </Grid>
             ))}
           </Grid>

@@ -33,6 +33,7 @@ import Footer from './components/layout/Footer';
 // Import pages
 import Home from './pages/Home';
 import RecipeSearch from './pages/RecipeSearch';
+import RecipeDetails from './pages/RecipeDetails';
 import ChatAssistant from './pages/ChatAssistant';
 import UserProfile from './pages/UserProfile';
 import Favorites from './pages/Favorites';
@@ -54,6 +55,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/search" element={<RecipeSearch />} />
+                    <Route path="/recipe/:id" element={<RecipeDetails />} />
                     <Route path="/chat" element={<ChatAssistant />} />
                     <Route path="/profile" element={<UserProfile />} />
                     <Route path="/favorites" element={<Favorites />} />

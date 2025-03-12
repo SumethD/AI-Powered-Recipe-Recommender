@@ -1,7 +1,7 @@
-# PowerShell script to run the AI-Powered Recipe Recommender application
-# This script starts both the backend and frontend servers
+# PowerShell script to run all services for the AI-Powered Recipe Recommender
 
 Write-Host "Starting AI-Powered Recipe Recommender..." -ForegroundColor Green
+Write-Host "Press Ctrl+C to stop all services" -ForegroundColor Yellow
 
 # Function to check if a port is in use
 function Test-PortInUse {
@@ -9,89 +9,90 @@ function Test-PortInUse {
         [int]$Port
     )
     
-    $connections = Get-NetTCPConnection -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq $Port }
-    return ($null -ne $connections)
+    $connections = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -eq $Port }
+    return $null -ne $connections
 }
 
-# Check if ports are already in use
-$backendPort = 5000
-$frontendPort = 3000
+# Check if ports are available
+$portsToCheck = @(5000, 8002, 3000)
+$portConflicts = @()
 
-if (Test-PortInUse -Port $backendPort) {
-    Write-Host "Warning: Port $backendPort is already in use. The backend server may not start properly." -ForegroundColor Yellow
+foreach ($port in $portsToCheck) {
+    if (Test-PortInUse -Port $port) {
+        $portConflicts += $port
+    }
 }
 
-if (Test-PortInUse -Port $frontendPort) {
-    Write-Host "Warning: Port $frontendPort is already in use. The frontend server may not start properly." -ForegroundColor Yellow
+if ($portConflicts.Count -gt 0) {
+    Write-Host "Error: The following ports are already in use: $($portConflicts -join ', ')" -ForegroundColor Red
+    Write-Host "Please close the applications using these ports and try again." -ForegroundColor Red
+    exit 1
 }
 
-# Start the backend server
-Write-Host "Starting backend server..." -ForegroundColor Cyan
-$backendJob = Start-Process -FilePath "python" -ArgumentList "app.py" -WorkingDirectory ".\backend" -PassThru -WindowStyle Normal
+# Create a directory for logs if it doesn't exist
+if (-not (Test-Path -Path "logs")) {
+    New-Item -ItemType Directory -Path "logs" | Out-Null
+}
 
-# Wait a moment for the backend to initialize
+# Start the AllRecipes API
+Write-Host "Starting AllRecipes API on port 8002..." -ForegroundColor Cyan
+Start-Process -FilePath "python" -ArgumentList "backend/allrecipes_api.py" -RedirectStandardOutput "logs/allrecipes_api.log" -RedirectStandardError "logs/allrecipes_api_error.log" -NoNewWindow
+
+# Wait for the AllRecipes API to start
+Write-Host "Waiting for AllRecipes API to start..." -ForegroundColor Cyan
 Start-Sleep -Seconds 3
 
-# Check if backend started successfully
-if ($null -eq $backendJob -or $backendJob.HasExited) {
-    Write-Host "Error: Failed to start backend server. Please check the logs for details." -ForegroundColor Red
-    exit 1
-}
+# Start the main backend API
+Write-Host "Starting Main Backend API on port 5000..." -ForegroundColor Cyan
+Start-Process -FilePath "python" -ArgumentList "backend/app.py" -RedirectStandardOutput "logs/main_api.log" -RedirectStandardError "logs/main_api_error.log" -NoNewWindow
 
-Write-Host "Backend server started successfully on http://localhost:$backendPort" -ForegroundColor Green
+# Wait for the main backend API to start
+Write-Host "Waiting for Main Backend API to start..." -ForegroundColor Cyan
+Start-Sleep -Seconds 3
 
-# Start the frontend server
-Write-Host "Starting frontend server..." -ForegroundColor Cyan
-$frontendJob = Start-Process -FilePath "npm" -ArgumentList "run", "dev" -WorkingDirectory ".\frontend" -PassThru -WindowStyle Normal
+# Start the frontend
+Write-Host "Starting Frontend on port 3000..." -ForegroundColor Cyan
+Set-Location -Path "frontend"
+Start-Process -FilePath "npm" -ArgumentList "start" -RedirectStandardOutput "..\logs\frontend.log" -RedirectStandardError "..\logs\frontend_error.log" -NoNewWindow
+Set-Location -Path ".."
 
-# Wait a moment for the frontend to initialize
-Start-Sleep -Seconds 5
+Write-Host "All services started successfully!" -ForegroundColor Green
+Write-Host "Frontend: http://localhost:3000" -ForegroundColor Green
+Write-Host "Main Backend API: http://localhost:5000" -ForegroundColor Green
+Write-Host "AllRecipes API: http://localhost:8002" -ForegroundColor Green
+Write-Host "Logs are being saved to the 'logs' directory" -ForegroundColor Green
 
-# Check if frontend started successfully
-if ($null -eq $frontendJob -or $frontendJob.HasExited) {
-    Write-Host "Error: Failed to start frontend server. Please check the logs for details." -ForegroundColor Red
-    
-    # Kill the backend process if it's still running
-    if (-not $backendJob.HasExited) {
-        $backendJob.Kill()
-    }
-    
-    exit 1
-}
-
-Write-Host "Frontend server started successfully on http://localhost:$frontendPort" -ForegroundColor Green
-Write-Host "AI-Powered Recipe Recommender is now running!" -ForegroundColor Green
-Write-Host "Open your browser and navigate to http://localhost:$frontendPort to use the application." -ForegroundColor Green
-Write-Host "Press Ctrl+C to stop both servers." -ForegroundColor Yellow
-
+# Keep the script running until the user presses Ctrl+C
 try {
-    # Keep the script running until user presses Ctrl+C
     while ($true) {
         Start-Sleep -Seconds 1
-        
-        # Check if either process has exited
-        if ($backendJob.HasExited) {
-            Write-Host "Backend server has stopped unexpectedly." -ForegroundColor Red
-            break
-        }
-        
-        if ($frontendJob.HasExited) {
-            Write-Host "Frontend server has stopped unexpectedly." -ForegroundColor Red
-            break
-        }
     }
 }
 finally {
-    # Clean up processes when the script is terminated
-    Write-Host "Stopping servers..." -ForegroundColor Cyan
+    # This block will execute when the user presses Ctrl+C
+    Write-Host "`nStopping all services..." -ForegroundColor Yellow
     
-    if (-not $backendJob.HasExited) {
-        $backendJob.Kill()
+    # Find and stop all Python processes running our scripts
+    $pythonProcesses = Get-Process -Name python -ErrorAction SilentlyContinue | 
+                      Where-Object { $_.CommandLine -like "*backend/app.py*" -or $_.CommandLine -like "*backend/allrecipes_api.py*" }
+    
+    if ($pythonProcesses) {
+        $pythonProcesses | ForEach-Object { 
+            Write-Host "Stopping process with ID $($_.Id)..." -ForegroundColor Yellow
+            Stop-Process -Id $_.Id -Force 
+        }
     }
     
-    if (-not $frontendJob.HasExited) {
-        $frontendJob.Kill()
+    # Find and stop the npm process for the frontend
+    $npmProcesses = Get-Process -Name node -ErrorAction SilentlyContinue | 
+                   Where-Object { $_.CommandLine -like "*react-scripts start*" }
+    
+    if ($npmProcesses) {
+        $npmProcesses | ForEach-Object { 
+            Write-Host "Stopping process with ID $($_.Id)..." -ForegroundColor Yellow
+            Stop-Process -Id $_.Id -Force 
+        }
     }
     
-    Write-Host "Servers stopped." -ForegroundColor Green
+    Write-Host "All services stopped." -ForegroundColor Green
 } 

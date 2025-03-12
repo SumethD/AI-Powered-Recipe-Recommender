@@ -1,71 +1,42 @@
 # AI-Powered Recipe Recommender
 
-An intelligent recipe recommendation system that helps users find, modify, and create recipes based on their preferences and available ingredients.
+An application that extracts recipe instructions from URLs and enhances them using AI when needed.
 
 ## Features
 
-- Search for recipes based on available ingredients
-- Filter recipes by dietary restrictions, cuisine, and more
-- Get AI-powered recipe modifications for healthier options, dietary restrictions, etc.
-- Save favorite recipes
-- Chat with AI for cooking advice and recipe suggestions
-- User preferences and favorites management
-- Comprehensive testing suite for both frontend and backend
+- Extract recipe instructions from various recipe websites
+- Specialized handling for AllRecipes.com URLs
+- AI-powered recipe instruction generation when scraping fails
+- Robust error handling and fallback mechanisms
+- Multiple API endpoints for different use cases
 
-## Project Structure
+## Architecture
 
-The project is divided into two main parts:
+The application consists of several components:
 
-- **Backend**: Python-based API server using Flask
-- **Frontend**: React application with TypeScript and Material-UI
+1. **Frontend** - React application that allows users to input recipe URLs and view instructions
+2. **Main Backend API** - Handles general recipe instruction extraction and AI generation
+3. **AllRecipes API** - Specialized API for extracting instructions from AllRecipes.com URLs
+4. **Recipe Instructions Service** - Core service that handles scraping and AI generation logic
 
-## Getting Started
+## Setup and Installation
 
 ### Prerequisites
 
-- Node.js (v14 or higher)
-- Python (v3.8 or higher)
-- npm or yarn
+- Python 3.8 or higher
+- Node.js 14 or higher
+- npm 6 or higher
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
-   ```
-   cd backend
-   ```
-
-2. Create a virtual environment:
-   ```
-   python -m venv venv
-   ```
-
-3. Activate the virtual environment:
-   - Windows:
-     ```
-     venv\Scripts\activate
-     ```
-   - macOS/Linux:
-     ```
-     source venv/bin/activate
-     ```
-
-4. Install dependencies:
+1. Install Python dependencies:
    ```
    pip install -r requirements.txt
    ```
 
-5. Set up environment variables:
-   - Create a `.env` file in the backend directory
-   - Add the following variables:
-     ```
-     OPENAI_API_KEY=your_openai_api_key
-     SPOONACULAR_API_KEY=your_spoonacular_api_key
-     FLASK_ENV=development
-     ```
-
-6. Start the backend server:
+2. Set up OpenAI API key (optional):
    ```
-   python app.py
+   export OPENAI_API_KEY=your_api_key_here
    ```
 
 ### Frontend Setup
@@ -79,111 +50,67 @@ The project is divided into two main parts:
    ```
    npm install
    ```
-   or
+
+## Running the Application
+
+### Start the Backend Services
+
+1. Start the AllRecipes API:
    ```
-   yarn install
+   python backend/allrecipes_api.py
+   ```
+   This will start the API on port 8002.
+
+2. Start the Main Backend API:
+   ```
+   python backend/app.py
+   ```
+   This will start the API on port 5000.
+
+### Start the Frontend
+
+1. Navigate to the frontend directory:
+   ```
+   cd frontend
    ```
 
-3. Start the development server:
+2. Start the development server:
    ```
    npm start
    ```
-   or
-   ```
-   yarn start
-   ```
-
-4. Open your browser and navigate to `http://localhost:3000`
+   This will start the frontend on port 3000.
 
 ## API Endpoints
 
-### Recipe Endpoints
+### AllRecipes API
 
-- `GET /api/recipes/ingredients` - Search recipes by ingredients
-- `GET /api/recipes/search` - Search recipes by query with filters
-- `GET /api/recipes/random` - Get random recipes
-- `GET /api/recipes/:id` - Get recipe details
-- `GET /api/recipes/cuisines` - Get supported cuisines
-- `GET /api/recipes/diets` - Get supported diets
-- `GET /api/recipes/intolerances` - Get supported intolerances
+- **POST /api/allrecipes**
+  - Request body: `{ "url": "https://www.allrecipes.com/recipe/..." }`
+  - Response: `{ "instructions": "Step 1: ... Step 2: ..." }`
 
-### User Endpoints
+### Main Backend API
 
-- `GET /api/users/:id` - Get user information
-- `GET /api/users/:id/favorites` - Get user's favorite recipes
-- `POST /api/users/:id/favorites` - Add a recipe to favorites
-- `DELETE /api/users/:id/favorites/:recipeId` - Remove a recipe from favorites
-- `PUT /api/users/:id/preferences` - Update user preferences
-- `GET /api/users/:id/preferences` - Get user preferences
+- **POST /api/recipe-instructions**
+  - Request body: `{ "url": "https://example.com/recipe/...", "recipe_id": "optional-id" }`
+  - Response: `{ "instructions": "Step 1: ... Step 2: ...", "recipe_id": "id", "source": "scraped|ai|basic", "cached": true|false }`
 
-### Chat Endpoints
-
-- `POST /api/chat/ask` - Send a message to the AI assistant
-- `POST /api/chat/feedback` - Submit feedback on AI responses
+- **GET /health**
+  - Response: `{ "status": "ok" }`
 
 ## Testing
 
-The project includes a comprehensive testing suite for both frontend and backend. See [TESTING.md](TESTING.md) for detailed instructions on running tests.
-
-### Running Tests
-
-You can run all tests using the provided script:
+Run the integration tests to verify that all components are working correctly:
 
 ```
-python run_tests.py --all
+python backend/test_integration.py
 ```
 
-Or run specific test suites:
+## Troubleshooting
 
-```
-python run_tests.py --frontend  # Run frontend tests only
-python run_tests.py --backend   # Run backend tests only
-```
-
-## Technologies Used
-
-### Backend
-- Flask
-- OpenAI API
-- Spoonacular API
-- Python
-- unittest for testing
-
-### Frontend
-- React
-- TypeScript (with strict mode)
-- Material-UI
-- React Router
-- Context API
-- Jest and React Testing Library for testing
-
-## Development
-
-### TypeScript Configuration
-
-The project uses TypeScript with strict mode enabled, which includes:
-
-- `noImplicitAny`: Raise error on expressions and declarations with an implied 'any' type
-- `strictNullChecks`: Enable strict null checks
-- `strictFunctionTypes`: Enable strict checking of function types
-- `noUnusedLocals`: Report errors on unused locals
-- `noUnusedParameters`: Report errors on unused parameters
-
-### Code Quality Tools
-
-- ESLint for JavaScript/TypeScript linting
-- Flake8 for Python linting
-
-## Future Enhancements
-
-- User authentication
-- Recipe sharing
-- Meal planning
-- Grocery list generation
-- Mobile app version
-- Enhanced AI recipe generation
-- Nutritional analysis and tracking
+- If you encounter port conflicts, ensure no other services are running on ports 3000, 5000, or 8002.
+- If the OpenAI API is not working, check that your API key is set correctly and that you have access to the required models.
+- If scraping fails for a specific URL, try using the AllRecipes API for AllRecipes URLs or the Main API for other URLs.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT

@@ -33,14 +33,15 @@ import {
   Sort as SortIcon,
 } from '@mui/icons-material';
 import { useRecipes } from '../context/RecipeContext';
+import { Recipe } from '../context/RecipeContext';
 import { useUser } from '../context/UserContext';
 import RecipeCard from '../components/RecipeCard';
 import { styled } from '@mui/material/styles';
 
 const DeleteButton = styled(IconButton)(({ theme }) => ({
   position: 'absolute',
-  bottom: 8,
-  right: 8,
+  top: 12,
+  left: 12,
   backgroundColor: 'rgba(255, 255, 255, 0.9)',
   boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
   padding: 8,
@@ -96,10 +97,15 @@ const Favorites: React.FC = () => {
   }, [favorites, searchTerm, sortBy, sortDirection]);
 
   const handleRecipeClick = (recipeId: number | string) => {
-    // Log the recipe ID to the console instead of navigating
-    console.log("Favorite recipe clicked:", recipeId);
-    
-    // No navigation to recipe details page
+    // Find the recipe in favorites
+    const recipe = favorites.find(r => r.id === recipeId);
+    if (recipe) {
+      navigate(`/recipe/${recipeId}`, {
+        state: {
+          recipe: recipe
+        }
+      });
+    }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -118,9 +124,9 @@ const Favorites: React.FC = () => {
     setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
   };
 
-  const handleRemoveFavorite = async (recipe: any, event: React.MouseEvent) => {
+  const handleRemoveFavorite = (recipe: Recipe, event: React.MouseEvent) => {
     event.stopPropagation();
-    await toggleFavorite(recipe);
+    toggleFavorite(recipe);
   };
 
   if (!user) {
@@ -215,16 +221,12 @@ const Favorites: React.FC = () => {
         <Grid container spacing={3}>
           {filteredFavorites.map((recipe) => (
             <Grid item key={recipe.id} xs={12} sm={6} md={4}>
-              <Box sx={{ position: 'relative' }}>
-                <RecipeCard recipe={recipe} />
-                <DeleteButton
-                  color="error"
-                  onClick={(e) => handleRemoveFavorite(recipe, e)}
-                  aria-label="Remove from favorites"
-                >
-                  <DeleteIcon />
-                </DeleteButton>
-              </Box>
+              <RecipeCard 
+                recipe={recipe} 
+                user={user}
+                toggleFavorite={toggleFavorite}
+                isFavoritesPage={true}
+              />
             </Grid>
           ))}
         </Grid>

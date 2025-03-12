@@ -8,6 +8,10 @@ from services.recipe_service import get_recipes_by_ingredients, get_recipe_detai
 from services.user_service import get_user, get_user_favorites, add_favorite, remove_favorite, update_user_preferences, get_user_preferences
 from routes.chat_routes import chat_bp
 from routes.recipe_routes import recipe_bp
+from fastapi import Request
+from fastapi.responses import JSONResponse
+from recipe_instructions_service import get_recipe_instructions
+import traceback
 
 # Add the current directory to the path to fix imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -26,12 +30,12 @@ print(f"EDAMAM_APP_ID: {os.getenv('EDAMAM_APP_ID', 'not set')}")
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s %(levelname)s: %(message)s',
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('logs/app.log'),
-        logging.StreamHandler()
+        logging.StreamHandler(sys.stdout)
     ]
 )
+logger = logging.getLogger("recipe_app")
 
 app = Flask(__name__)
 CORS(app)
@@ -285,5 +289,115 @@ def update_preferences_route(user_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Start Recipe Instructions Service automatically
+def start_recipe_instructions_service():
+    import subprocess
+    import threading
+    import sys
+    
+    def run_service():
+        try:
+            print("Starting Recipe Instructions Service...")
+            # Using uvicorn to run the FastAPI app
+            cmd = [sys.executable, "-m", "uvicorn", "recipe_instructions_service:app", "--host", "0.0.0.0", "--port", "8003"]
+            subprocess.Popen(cmd, cwd=os.path.dirname(os.path.abspath(__file__)))
+            print("Recipe Instructions Service started successfully on http://localhost:8003")
+        except Exception as e:
+            print(f"Error starting Recipe Instructions Service: {str(e)}")
+    
+    # Start in a separate thread so it doesn't block the Flask app
+    try:
+        service_thread = threading.Thread(target=run_service)
+        service_thread.daemon = True  # This ensures the thread will be killed when the main process exits
+        service_thread.start()
+    except Exception as e:
+        print(f"Warning: Could not start Recipe Instructions Service: {str(e)}")
+        print("The main API will continue to run but recipe instructions may not be available.")
+
+# Start AllRecipes API automatically
+def start_allrecipes_api():
+    import subprocess
+    import threading
+    import sys
+    
+    def run_service():
+        try:
+            print("Starting AllRecipes API...")
+            # Using uvicorn to run the FastAPI app
+            cmd = [sys.executable, "-m", "uvicorn", "allrecipes_api:app", "--host", "0.0.0.0", "--port", "8002"]
+            subprocess.Popen(cmd, cwd=os.path.dirname(os.path.abspath(__file__)))
+            print("AllRecipes API started successfully on http://localhost:8002")
+        except Exception as e:
+            print(f"Error starting AllRecipes API: {str(e)}")
+    
+    # Start in a separate thread so it doesn't block the Flask app
+    try:
+        service_thread = threading.Thread(target=run_service)
+        service_thread.daemon = True  # This ensures the thread will be killed when the main process exits
+        service_thread.start()
+    except Exception as e:
+        print(f"Warning: Could not start AllRecipes API: {str(e)}")
+        print("The main API will continue to run but AllRecipes parsing may not be available.")
+
+# Exception handlers
+@app.errorhandler(Exception)
+def global_exception_handler(exc):
+    """Global exception handler for unhandled exceptions"""
+    error_traceback = traceback.format_exc()
+    
+    # Log detailed error information
+    logger.error(f"Unhandled exception: {str(exc)}")
+    logger.error(f"Exception type: {type(exc).__name__}")
+    logger.error(f"Traceback: {error_traceback}")
+    
+    # Return a more detailed error response in development
+    if os.environ.get("ENVIRONMENT") != "production":
+        return jsonify({
+            "detail": str(exc),
+            "type": type(exc).__name__,
+            "traceback": error_traceback.split("\n")
+        }), 500
+    else:
+        # In production, return a generic error message
+        return jsonify({"detail": "Internal server error"}), 500
+
+# Add a health endpoint
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to verify the API is running."""
+    return jsonify({"status": "healthy", "service": "recipe-api"})
+
+@app.route('/api/recipe-instructions', methods=['GET'])
+def recipe_instructions():
+    url = request.args.get('url')
+    recipe_id = request.args.get('recipe_id')
+    
+    if not url:
+        return jsonify({"error": "URL parameter is required"}), 400
+    
+    try:
+        instructions_data = get_recipe_instructions(url, recipe_id)
+        return jsonify(instructions_data)
+    except Exception as e:
+        logger.error(f"Error getting recipe instructions: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({
+            "error": "Failed to get recipe instructions",
+            "message": str(e),
+            "instructions": "We couldn't retrieve the instructions for this recipe. Try visiting the original recipe website."
+        }), 500
+
 if __name__ == '__main__':
+    # Start recipe instructions service before starting the Flask app
+    try:
+        start_recipe_instructions_service()
+        start_allrecipes_api()
+        
+        # Give the services a moment to start up
+        import time
+        time.sleep(2)
+    except Exception as e:
+        print(f"Warning: Error starting backend services: {str(e)}")
+        print("The main API will continue to run but some features may not be available.")
+    
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000))) 

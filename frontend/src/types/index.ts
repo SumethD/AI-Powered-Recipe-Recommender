@@ -3,6 +3,34 @@ export interface RecipeParams {
   id: string;
 }
 
+// Define Recipe interface
+export interface Recipe {
+  id: string;
+  title?: string;
+  name?: string;
+  sourceUrl?: string;
+  source_url?: string;
+  instructions?: string;
+  sourceName?: string;
+  image?: string;
+  readyInMinutes?: number;
+  ingredients?: string[];
+  extendedIngredients?: any[];
+  servings?: number;
+  cuisines?: string[];
+  cuisine?: string;
+  diets?: string[];
+  isFavorite?: boolean;
+  summary?: string;
+  nutrition?: {
+    nutrients: Array<{
+      name: string;
+      amount: number;
+      unit: string;
+    }>;
+  };
+}
+
 // User-related types
 export interface UserParams {
   id: string;

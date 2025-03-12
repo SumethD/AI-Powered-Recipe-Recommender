@@ -9,6 +9,8 @@ from services.user_service import (
     is_favorite, update_user_preferences, get_user_preferences
 )
 from models.recipe import Recipe
+import asyncio
+from recipe_instructions_api import get_recipe_instructions, RecipeInstructionsRequest
 
 recipe_bp = Blueprint('recipes', __name__)
 
@@ -607,4 +609,69 @@ def update_preferences_endpoint():
         })
     except Exception as e:
         current_app.logger.error(f"Error updating preferences: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+@recipe_bp.route('/instructions', methods=['POST'])
+def recipe_instructions_endpoint():
+    """
+    Get cooking instructions for a recipe using a hybrid approach of web scraping and AI generation.
+    
+    Expects a JSON with:
+    - 'recipe_id': ID of the recipe (required)
+    - 'recipe_name': Name of the recipe (required)
+    - 'source_url': URL of the recipe source (optional)
+    - 'ingredients': List of ingredients (required)
+    - 'servings': Number of servings (optional)
+    - 'cuisine': Cuisine type (optional)
+    - 'diets': List of dietary preferences (optional)
+    
+    Returns:
+    - Recipe instructions as HTML-formatted text
+    - Source of the instructions ('scraped' or 'ai-generated')
+    - Whether the result was from cache
+    """
+    current_app.logger.info("Recipe instructions endpoint accessed")
+    
+    try:
+        # Get request data
+        data = request.json
+        
+        if not data:
+            current_app.logger.error("No JSON data in request")
+            return jsonify({"error": "No data provided"}), 400
+        
+        # Validate required fields
+        required_fields = ['recipe_id', 'recipe_name', 'ingredients']
+        for field in required_fields:
+            if field not in data:
+                current_app.logger.error(f"Missing required field: {field}")
+                return jsonify({"error": f"Missing required field: {field}"}), 400
+        
+        # Create request object
+        recipe_data = RecipeInstructionsRequest(
+            recipe_id=str(data['recipe_id']),
+            recipe_name=data['recipe_name'],
+            source_url=data.get('source_url'),
+            ingredients=data['ingredients'],
+            servings=data.get('servings'),
+            cuisine=data.get('cuisine'),
+            diets=data.get('diets', [])
+        )
+        
+        # Use asyncio to run the async function
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        response = loop.run_until_complete(get_recipe_instructions(recipe_data))
+        loop.close()
+        
+        # Return the response
+        return jsonify({
+            "recipe_id": response.recipe_id,
+            "instructions": response.instructions,
+            "source": response.source,
+            "cached": response.cached
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in recipe_instructions_endpoint: {str(e)}")
         return jsonify({"error": str(e)}), 500 

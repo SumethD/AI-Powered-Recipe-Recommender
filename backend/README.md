@@ -282,4 +282,148 @@ backend/
 │   └── spoonacular_service.py # Spoonacular API integration
 └── utils/                  # Utility functions
     └── error_handlers.py   # Error handling utilities
-``` 
+```
+
+# Recipe Instructions Service
+
+A hybrid service that extracts or generates cooking instructions for recipes using web scraping and AI generation.
+
+## Features
+
+- **Hybrid Approach**: Attempts to scrape instructions from source websites first, then falls back to AI generation if scraping fails
+- **Caching**: Implements in-memory caching to avoid redundant processing
+- **Rate Limiting**: Protects against excessive API usage
+- **Error Handling**: Gracefully handles failures with appropriate fallbacks
+
+## Setup
+
+### Prerequisites
+
+- Python 3.8 or higher
+- OpenAI API key
+
+### Installation
+
+1. Clone the repository
+2. Navigate to the backend directory
+3. Create a virtual environment:
+   ```
+   python -m venv venv
+   ```
+4. Activate the virtual environment:
+   - On Windows: `venv\Scripts\activate`
+   - On macOS/Linux: `source venv/bin/activate`
+5. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+6. Create a `.env` file based on `.env.example`:
+   ```
+   cp .env.example .env
+   ```
+7. Edit the `.env` file and add your OpenAI API key
+
+### Running the Service
+
+You can run the service using the provided script:
+
+```
+./run_service.sh
+```
+
+Or manually:
+
+```
+uvicorn recipe_instructions_service:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The service will be available at `http://localhost:8000`.
+
+## API Documentation
+
+### Endpoints
+
+#### `POST /api/recipe-instructions`
+
+Fetches or generates cooking instructions for a recipe.
+
+**Request Body:**
+
+```json
+{
+  "recipe_id": "string",
+  "recipe_name": "string",
+  "source_url": "string",
+  "ingredients": ["string"],
+  "servings": 4,
+  "cuisine": "string",
+  "diets": ["string"]
+}
+```
+
+**Response:**
+
+```json
+{
+  "recipe_id": "string",
+  "instructions": "string",
+  "source": "scraped | ai-generated",
+  "cached": false
+}
+```
+
+#### `GET /api/health`
+
+Health check endpoint.
+
+**Response:**
+
+```json
+{
+  "status": "healthy"
+}
+```
+
+## Integration with Frontend
+
+The frontend can use the provided TypeScript service to interact with this API:
+
+```typescript
+import recipeInstructionsService from '../services/recipeInstructionsService';
+
+// Prepare recipe data
+const recipeData = recipeInstructionsService.prepareRecipeForInstructionsAPI(recipe);
+
+// Fetch instructions
+const response = await recipeInstructionsService.getRecipeInstructions(recipeData);
+
+// Use the instructions
+console.log(response.instructions);
+console.log(response.source); // "scraped" or "ai-generated"
+```
+
+## How It Works
+
+1. When a request is received, the service first checks if instructions for the recipe are already in the cache.
+2. If not cached, it attempts to scrape instructions from the source URL using various selectors and patterns.
+3. If scraping fails or returns insufficient data, it falls back to generating instructions using OpenAI's API.
+4. The result is cached for future requests and returned to the client.
+
+## Customization
+
+You can customize the service by modifying the following:
+
+- **Cache TTL**: Change `CACHE_TTL` in the `.env` file (in seconds)
+- **Rate Limits**: Adjust `SCRAPING_RATE_LIMIT` and `OPENAI_RATE_LIMIT` in the `.env` file
+- **OpenAI Model**: Modify the model in the `generate_instructions_with_ai` function
+- **Scraping Selectors**: Add or modify selectors in the `scrape_instructions` function
+
+## Troubleshooting
+
+- **Scraping Issues**: If scraping fails for specific websites, you may need to add custom selectors for those sites.
+- **OpenAI API Errors**: Ensure your API key is valid and has sufficient credits.
+- **Rate Limiting**: If you're hitting rate limits, consider adjusting the limits in the `.env` file.
+
+## License
+
+MIT 
