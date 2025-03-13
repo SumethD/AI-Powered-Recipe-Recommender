@@ -40,6 +40,10 @@ import Favorites from './pages/Favorites';
 import NotFound from './pages/NotFound';
 import TestRecipeFlow from './components/TestRecipeFlow';
 import ApiTest from './components/ApiTest';
+// @ts-ignore
+import VideoToRecipe from './pages/VideoToRecipe.jsx';
+// @ts-ignore
+import ApiDebug from './pages/ApiDebug.jsx';
 
 function App() {
   return (
@@ -59,6 +63,8 @@ function App() {
                     <Route path="/chat" element={<ChatAssistant />} />
                     <Route path="/profile" element={<UserProfile />} />
                     <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/video-to-recipe" element={<VideoToRecipe />} />
+                    <Route path="/api-debug" element={<ApiDebug />} />
                     <Route path="/test-recipe-flow" element={<TestRecipeFlow />} />
                     <Route path="/api-test" element={<ApiTest />} />
                     <Route path="*" element={<NotFound />} />

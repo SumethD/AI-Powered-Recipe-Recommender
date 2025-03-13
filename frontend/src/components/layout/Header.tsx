@@ -20,6 +20,8 @@ import {
   Container,
   Tooltip,
   Divider,
+  Badge,
+  Collapse,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -30,7 +32,10 @@ import {
   Chat as ChatIcon,
   Restaurant as RestaurantIcon,
   Logout as LogoutIcon,
-  Fastfood as FastfoodIcon,
+  VideoCall as VideoCallIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  MoreVert as MoreVertIcon,
 } from '@mui/icons-material';
 import { useUser } from '../../context/UserContext';
 
@@ -39,8 +44,11 @@ const Header: React.FC = () => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -52,6 +60,18 @@ const Header: React.FC = () => {
 
   const handleProfileMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleMoreMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setMoreMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMoreMenuClose = () => {
+    setMoreMenuAnchorEl(null);
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
   };
 
   const handleLogout = () => {
@@ -77,54 +97,64 @@ const Header: React.FC = () => {
     handleProfileMenuClose();
   };
 
-  const navItems = [
+  // Primary navigation items that always show in the main bar
+  const primaryNavItems = [
     { text: 'Home', path: '/', icon: <HomeIcon /> },
-    { text: 'Search Recipes', path: '/search', icon: <SearchIcon /> },
+    { text: 'Search', path: '/search', icon: <SearchIcon /> },
     { text: 'Favorites', path: '/favorites', icon: <FavoriteIcon /> },
-    { text: 'Chat Assistant', path: '/chat', icon: <ChatIcon /> },
   ];
 
+  // Secondary navigation items that go in the "More" dropdown on desktop
+  const secondaryNavItems = [
+    { text: 'Chat Assistant', path: '/chat', icon: <ChatIcon /> },
+    { text: 'Video-to-Recipe', path: '/video-to-recipe', icon: <VideoCallIcon /> },
+  ];
+
+  // All nav items for mobile drawer
+  const allNavItems = [...primaryNavItems, ...secondaryNavItems];
+
   const drawer = (
-    <Box sx={{ width: 280, pt: 3 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', px: 3, pb: 3 }}>
-        <RestaurantIcon sx={{ mr: 1.5, color: theme.palette.primary.main, fontSize: 28 }} />
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          Recipe Recommender
+    <Box sx={{ width: 280, bgcolor: '#FFFEF8' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', p: 2, bgcolor: theme.palette.primary.main }}>
+        <RestaurantIcon sx={{ mr: 1.5, color: '#F8F4E3', fontSize: 28 }} />
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#F8F4E3' }}>
+          Savorly
         </Typography>
       </Box>
       <Divider />
-      <List sx={{ pt: 3 }}>
-        {navItems.map((item) => (
+      <List sx={{ py: 1 }}>
+        {allNavItems.map((item) => (
           <ListItem
             button
             component={Link}
             to={item.path}
             key={item.text}
             selected={location.pathname === item.path}
+            onClick={() => setDrawerOpen(false)}
             sx={{
-              borderRadius: 0,
-              mr: 0,
-              mb: 0,
-              py: 2.5,
-              px: 3,
+              py: 1.5,
+              px: 2,
               borderLeft: location.pathname === item.path ? `4px solid ${theme.palette.primary.main}` : '4px solid transparent',
               '&.Mui-selected': {
-                bgcolor: `${theme.palette.primary.main}08`,
+                backgroundColor: `${theme.palette.primary.main}15`,
                 color: theme.palette.primary.main,
                 '& .MuiListItemIcon-root': {
                   color: theme.palette.primary.main,
                 },
               },
               '&:hover': {
-                bgcolor: `${theme.palette.primary.main}04`,
+                backgroundColor: `${theme.palette.primary.main}08`,
               },
             }}
           >
-            <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ minWidth: 40, color: location.pathname === item.path ? theme.palette.primary.main : '#697A63' }}>
+              {item.icon}
+            </ListItemIcon>
             <ListItemText 
               primary={item.text} 
               primaryTypographyProps={{ 
-                fontWeight: location.pathname === item.path ? 600 : 400 
+                fontWeight: location.pathname === item.path ? 600 : 400,
+                color: location.pathname === item.path ? theme.palette.primary.main : '#3a3a3a'
               }} 
             />
           </ListItem>
@@ -132,11 +162,11 @@ const Header: React.FC = () => {
       </List>
       {user && (
         <>
-          <Divider sx={{ mt: 2 }} />
-          <Box sx={{ p: 3, display: 'flex', alignItems: 'center' }}>
+          <Divider />
+          <Box sx={{ p: 2, display: 'flex', alignItems: 'center', bgcolor: '#F8F4E3' }}>
             <Avatar 
               sx={{ 
-                bgcolor: theme.palette.primary.main,
+                bgcolor: theme.palette.secondary.main,
                 width: 40,
                 height: 40,
                 mr: 2
@@ -145,14 +175,33 @@ const Header: React.FC = () => {
               {user.name.charAt(0).toUpperCase()}
             </Avatar>
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#3a3a3a' }}>
                 {user.name}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: '#5a5a5a' }}>
                 {user.preferences.cooking_skill} cook
               </Typography>
             </Box>
           </Box>
+          <List>
+            <ListItem 
+              button 
+              component={Link} 
+              to="/profile"
+              onClick={() => setDrawerOpen(false)}
+            >
+              <ListItemIcon>
+                <PersonIcon sx={{ color: theme.palette.primary.main }} />
+              </ListItemIcon>
+              <ListItemText primary="Profile" primaryTypographyProps={{ color: '#3a3a3a' }} />
+            </ListItem>
+            <ListItem button onClick={handleLogout}>
+              <ListItemIcon>
+                <LogoutIcon sx={{ color: theme.palette.error.main }} />
+              </ListItemIcon>
+              <ListItemText primary="Logout" primaryTypographyProps={{ color: '#3a3a3a' }} />
+            </ListItem>
+          </List>
         </>
       )}
     </Box>
@@ -162,88 +211,157 @@ const Header: React.FC = () => {
     <>
       <AppBar 
         position="sticky" 
-        elevation={0}
+        elevation={2}
         sx={{ 
-          background: `linear-gradient(90deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          background: 'linear-gradient(135deg, #8BA872 0%, #697A63 100%)',
           borderRadius: 0,
         }}
       >
         <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ py: 2 }}>
-            {isMobile && (
+          <Toolbar disableGutters sx={{ py: { xs: 1, md: 1.5 }, height: { xs: 64, md: 70 } }}>
+            {isSmallScreen && (
               <IconButton
                 color="inherit"
                 aria-label="open drawer"
                 edge="start"
                 onClick={handleDrawerToggle}
-                sx={{ mr: 2 }}
+                sx={{ mr: 1 }}
+                size="medium"
               >
                 <MenuIcon />
               </IconButton>
             )}
             
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <RestaurantIcon sx={{ mr: 1.5, display: { xs: 'none', sm: 'flex' }, fontSize: 28 }} />
+              <RestaurantIcon sx={{ mr: 1, display: { xs: 'none', sm: 'flex' }, fontSize: 28, color: '#F8F4E3' }} />
               <Typography
                 variant="h6"
                 component={Link}
                 to="/"
                 sx={{
-                  color: 'white',
+                  color: '#F8F4E3',
                   textDecoration: 'none',
                   fontWeight: 'bold',
                   letterSpacing: '0.5px',
-                  fontSize: { xs: '1.1rem', md: '1.25rem' }
+                  fontSize: { xs: '1rem', md: '1.25rem' },
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                  }
                 }}
               >
-                Recipe Recommender
+                Savorly
               </Typography>
             </Box>
             
             <Box sx={{ flexGrow: 1 }} />
             
-            {!isMobile && (
-              <Box sx={{ display: 'flex' }}>
-                {navItems.map((item) => (
+            {!isSmallScreen && (
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {primaryNavItems.map((item) => (
                   <Button
                     key={item.text}
                     component={Link}
                     to={item.path}
                     color="inherit"
                     sx={{
-                      mx: 1.5,
-                      px: 3,
-                      py: 2,
-                      borderRadius: 0,
-                      position: 'relative',
-                      fontSize: '1rem',
+                      mx: { sm: 0.5, md: 1 },
+                      px: { sm: 1.5, md: 2 },
+                      py: 1,
+                      borderRadius: 1,
+                      fontSize: '0.9rem',
                       fontWeight: location.pathname === item.path ? 600 : 400,
-                      '&::after': {
-                        content: '""',
-                        position: 'absolute',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: '3px',
-                        width: '100%',
-                        backgroundColor: 'white',
-                        transform: location.pathname === item.path ? 'scaleY(1)' : 'scaleY(0)',
-                        transformOrigin: 'bottom',
-                        transition: 'transform 0.3s ease',
+                      backgroundColor: location.pathname === item.path ? 'rgba(248, 244, 227, 0.15)' : 'transparent',
+                      color: '#F8F4E3',
+                      '&:hover': {
+                        backgroundColor: 'rgba(248, 244, 227, 0.25)',
                       },
-                      '&:hover::after': {
-                        transform: 'scaleY(1)',
-                      }
+                      transition: 'all 0.2s ease',
                     }}
                     startIcon={item.icon}
                   >
                     {item.text}
                   </Button>
                 ))}
+                
+                {/* More menu for secondary navigation items */}
+                <Button
+                  color="inherit"
+                  onClick={handleMoreMenuOpen}
+                  sx={{
+                    mx: { sm: 0.5, md: 1 },
+                    px: { sm: 1.5, md: 2 },
+                    py: 1,
+                    borderRadius: 1,
+                    fontSize: '0.9rem',
+                    color: '#F8F4E3',
+                    '&:hover': {
+                      backgroundColor: 'rgba(248, 244, 227, 0.25)',
+                    },
+                  }}
+                  endIcon={<MoreVertIcon />}
+                >
+                  More
+                </Button>
+                <Menu
+                  anchorEl={moreMenuAnchorEl}
+                  open={Boolean(moreMenuAnchorEl)}
+                  onClose={handleMoreMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  PaperProps={{
+                    elevation: 3,
+                    sx: {
+                      mt: 1,
+                      borderRadius: 1,
+                      minWidth: 180,
+                    },
+                  }}
+                >
+                  {secondaryNavItems.map((item) => (
+                    <MenuItem
+                      key={item.text}
+                      component={Link}
+                      to={item.path}
+                      onClick={handleMoreMenuClose}
+                      sx={{
+                        py: 1.5,
+                        px: 2,
+                        backgroundColor: location.pathname === item.path ? `${theme.palette.primary.main}15` : 'transparent',
+                        '&:hover': {
+                          backgroundColor: `${theme.palette.primary.main}08`,
+                        },
+                      }}
+                    >
+                      <ListItemIcon sx={{ 
+                        minWidth: 35, 
+                        color: location.pathname === item.path ? theme.palette.primary.main : 'inherit'
+                      }}>
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText 
+                        primary={item.text} 
+                        primaryTypographyProps={{
+                          fontWeight: location.pathname === item.path ? 600 : 400,
+                          color: location.pathname === item.path ? theme.palette.primary.main : 'inherit'
+                        }}
+                      />
+                    </MenuItem>
+                  ))}
+                </Menu>
               </Box>
             )}
             
-            <Box sx={{ ml: 3 }}>
+            {/* Login button or user profile */}
+            <Box sx={{ ml: { xs: 1, sm: 2 } }}>
               {user ? (
                 <>
                   <Tooltip title="Account settings">
@@ -255,10 +373,12 @@ const Header: React.FC = () => {
                       aria-haspopup="true"
                       sx={{ 
                         p: 0.5,
-                        borderRadius: 0,
-                        border: '2px solid rgba(255, 255, 255, 0.3)',
+                        borderRadius: 1,
+                        border: '2px solid rgba(248, 244, 227, 0.3)',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          border: '2px solid rgba(255, 255, 255, 0.8)',
+                          border: '2px solid rgba(248, 244, 227, 0.8)',
+                          transform: 'scale(1.05)',
                         }
                       }}
                     >
@@ -290,28 +410,16 @@ const Header: React.FC = () => {
                     open={Boolean(anchorEl)}
                     onClose={handleProfileMenuClose}
                     PaperProps={{
-                      elevation: 2,
+                      elevation: 3,
                       sx: {
-                        mt: 1.5,
-                        minWidth: 180,
-                        borderRadius: 0,
+                        mt: 1,
+                        borderRadius: 1,
+                        minWidth: 200,
                         overflow: 'visible',
-                        '&:before': {
-                          content: '""',
-                          display: 'block',
-                          position: 'absolute',
-                          top: 0,
-                          right: 14,
-                          width: 10,
-                          height: 10,
-                          bgcolor: 'background.paper',
-                          transform: 'translateY(-50%) rotate(45deg)',
-                          zIndex: 0,
-                        },
                       },
                     }}
                   >
-                    <Box sx={{ px: 3, py: 2 }}>
+                    <Box sx={{ px: 2, py: 1.5 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                         {user.name}
                       </Typography>
@@ -324,14 +432,14 @@ const Header: React.FC = () => {
                       component={Link}
                       to="/profile"
                       onClick={handleProfileMenuClose}
-                      sx={{ py: 2, px: 3 }}
+                      sx={{ py: 1.5, px: 2 }}
                     >
                       <ListItemIcon>
                         <PersonIcon fontSize="small" color="primary" />
                       </ListItemIcon>
                       <ListItemText>Profile</ListItemText>
                     </MenuItem>
-                    <MenuItem onClick={handleLogout} sx={{ py: 2, px: 3 }}>
+                    <MenuItem onClick={handleLogout} sx={{ py: 1.5, px: 2 }}>
                       <ListItemIcon>
                         <LogoutIcon fontSize="small" color="error" />
                       </ListItemIcon>
@@ -344,15 +452,19 @@ const Header: React.FC = () => {
                   color="inherit" 
                   onClick={handleLogin}
                   variant="outlined"
-                  size="large"
                   sx={{ 
-                    borderRadius: 0,
-                    borderColor: 'rgba(255, 255, 255, 0.5)',
-                    px: 3,
-                    py: 1,
+                    borderRadius: 1,
+                    borderColor: 'rgba(248, 244, 227, 0.5)',
+                    px: { xs: 2, sm: 3 },
+                    py: 0.8,
+                    minWidth: { xs: 70, sm: 85 },
+                    fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    color: '#F8F4E3',
+                    transition: 'all 0.2s ease',
                     '&:hover': {
-                      borderColor: 'rgba(255, 255, 255, 0.9)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                      borderColor: 'rgba(248, 244, 227, 0.9)',
+                      backgroundColor: 'rgba(248, 244, 227, 0.15)',
+                      transform: 'scale(1.05)',
                     }
                   }}
                 >

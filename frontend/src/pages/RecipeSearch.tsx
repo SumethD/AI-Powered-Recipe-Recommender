@@ -48,7 +48,6 @@ interface LocationState {
   ingredients?: string[];
   query?: string;
   activeTab?: number;
-  apiProvider?: string;
 }
 
 // Styled components
@@ -102,9 +101,6 @@ const RecipeSearch: React.FC = () => {
   const [isFiltersLoading, setIsFiltersLoading] = useState<boolean>(false);
   const [filtersError, setFiltersError] = useState<string | null>(null);
 
-  // State for API provider
-  const [apiProvider, setApiProvider] = useState('edamam'); // Default to edamam
-  
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Load filters data on mount
@@ -157,19 +153,14 @@ const RecipeSearch: React.FC = () => {
     // Check if we have search parameters from navigation
     const state = location.state as LocationState;
     if (state) {
-      // Restore API provider if provided
-      if (state.apiProvider) {
-        setApiProvider(state.apiProvider);
-      }
-      
       if (state.ingredients && state.ingredients.length > 0) {
         setIngredientsList(state.ingredients);
         setSearchTab(0); // Switch to ingredients tab
-        handleSearchByIngredients(state.ingredients, state.apiProvider);
+        handleSearchByIngredients(state.ingredients);
       } else if (state.query) {
         setSearchQuery(state.query);
         setSearchTab(1); // Switch to query tab
-        handleSearchByQuery(state.query, state.apiProvider);
+        handleSearchByQuery(state.query);
       }
       
       // Restore active tab if provided
@@ -214,19 +205,19 @@ const RecipeSearch: React.FC = () => {
     }
   };
 
-  const handleSearchByIngredients = (ingredients: string[] = ingredientsList, customApiProvider?: string) => {
+  const handleSearchByIngredients = (ingredients: string[] = ingredientsList) => {
     if (ingredients.length === 0) return;
-    searchByIngredients(ingredients, customApiProvider || apiProvider);
+    searchByIngredients(ingredients, 'edamam');
   };
 
-  const handleSearchByQuery = (query: string = searchQuery, customApiProvider?: string) => {
+  const handleSearchByQuery = (query: string = searchQuery) => {
     if (query.trim() === '') return;
     
     const intolerancesString = selectedIntolerances.length > 0 
       ? selectedIntolerances.join(',') 
       : undefined;
     
-    searchRecipes(query, selectedCuisine, selectedDiet, intolerancesString, customApiProvider || apiProvider);
+    searchRecipes(query, selectedCuisine, selectedDiet, intolerancesString, 'edamam');
   };
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
@@ -264,10 +255,6 @@ const RecipeSearch: React.FC = () => {
     setSelectedIntolerances(typeof value === 'string' ? value.split(',') : value);
   };
 
-  const handleApiProviderChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setApiProvider(event.target.checked ? 'edamam' : 'spoonacular');
-  };
-
   return (
     <Container maxWidth="lg">
       <Typography variant="h4" component="h1" gutterBottom>
@@ -287,19 +274,6 @@ const RecipeSearch: React.FC = () => {
           <Tab label="Search by Query" />
         </Tabs>
         
-        {/* API Provider Toggle */}
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={apiProvider === 'edamam'}
-                onChange={handleApiProviderChange}
-                color="primary"
-              />
-            }
-            label={`API: ${apiProvider === 'edamam' ? 'Edamam' : 'Spoonacular'}`}
-          />
-        </Box>
 
         {searchTab === 0 ? (
           <>
@@ -538,7 +512,6 @@ const RecipeSearch: React.FC = () => {
               <Grid item xs={12} sm={6} md={4} key={recipe.id}>
                 <RecipeCard 
                   recipe={recipe} 
-                  apiProvider={apiProvider} 
                   user={user}
                   toggleFavorite={handleToggleFavorite}
                 />

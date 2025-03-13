@@ -8,10 +8,12 @@ from services.recipe_service import get_recipes_by_ingredients, get_recipe_detai
 from services.user_service import get_user, get_user_favorites, add_favorite, remove_favorite, update_user_preferences, get_user_preferences
 from routes.chat_routes import chat_bp
 from routes.recipe_routes import recipe_bp
+from routes.video_routes import video_bp
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from recipe_instructions_service import get_recipe_instructions
 import traceback
+import datetime
 
 # Add the current directory to the path to fix imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -43,6 +45,7 @@ CORS(app)
 # Register blueprints
 app.register_blueprint(recipe_bp, url_prefix='/api/recipes')
 app.register_blueprint(chat_bp, url_prefix='/api/chat')
+app.register_blueprint(video_bp, url_prefix='/api/videos')
 
 # Add a test endpoint to check if the edamam_service is being imported correctly
 @app.route('/api/test-edamam', methods=['GET'])
@@ -181,7 +184,7 @@ def recipes_by_ingredients():
     app.logger.info(f"Parameters: limit={limit}, ranking={ranking}")
     
     try:
-        # Get recipes from Spoonacular
+        # Get recipes from Edamam
         recipes = get_recipes_by_ingredients(ingredients_list, limit, ranking)
         return jsonify(recipes)
     except Exception as e:
@@ -211,7 +214,7 @@ def search_recipes_route():
     app.logger.info(f"Parameters: cuisine={cuisine}, diet={diet}, intolerances={intolerances}, limit={limit}")
     
     try:
-        # Get recipes from Spoonacular
+        # Get recipes from Edamam
         recipes = search_recipes(query, cuisine, diet, intolerances, limit)
         return jsonify(recipes)
     except Exception as e:
@@ -365,7 +368,21 @@ def global_exception_handler(exc):
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint to verify the API is running."""
-    return jsonify({"status": "healthy", "service": "recipe-api"})
+    try:
+        # Check if required services are initialized
+        # This could check database connections or other dependencies
+        return jsonify({
+            "status": "healthy", 
+            "service": "recipe-api", 
+            "timestamp": datetime.datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "service": "recipe-api",
+            "error": str(e),
+            "timestamp": datetime.datetime.now().isoformat()
+        }), 500
 
 @app.route('/api/recipe-instructions', methods=['GET'])
 def recipe_instructions():

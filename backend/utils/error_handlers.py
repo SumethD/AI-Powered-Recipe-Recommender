@@ -87,8 +87,8 @@ def register_error_handlers(app):
             rv['message'] = self.message
             return rv
     
-    class SpoonacularAPIError(APIError):
-        """Exception raised for Spoonacular API errors"""
+    class EdamamAPIError(APIError):
+        """Exception raised for Edamam API errors"""
         pass
     
     class OpenAIAPIError(APIError):
@@ -104,5 +104,5 @@ def register_error_handlers(app):
     
     # Make the custom exceptions available to the app
     app.APIError = APIError
-    app.SpoonacularAPIError = SpoonacularAPIError
+    app.EdamamAPIError = EdamamAPIError
     app.OpenAIAPIError = OpenAIAPIError 

@@ -11,11 +11,12 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-for-development-only')
     
     # API Keys
-    SPOONACULAR_API_KEY = os.getenv('SPOONACULAR_API_KEY')
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    EDAMAM_API_KEY = os.getenv('EDAMAM_API_KEY')
+    EDAMAM_APP_ID = os.getenv('EDAMAM_APP_ID')
     
     # API Base URLs
-    SPOONACULAR_BASE_URL = 'https://api.spoonacular.com'
+    EDAMAM_BASE_URL = 'https://api.edamam.com'
 
 class DevelopmentConfig(Config):
     """Development configuration"""

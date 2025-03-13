@@ -21,7 +21,7 @@ const Footer: React.FC = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <RestaurantIcon sx={{ mr: 1, color: theme.palette.primary.main }} />
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                Recipe Recommender
+                Savorly
               </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -79,11 +79,11 @@ const Footer: React.FC = () => {
               Powered By
             </Typography>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              <Link href="https://spoonacular.com/food-api" target="_blank" rel="noopener" underline="hover" color="text.secondary">
-                Spoonacular API
-              </Link>
               <Link href="https://openai.com/" target="_blank" rel="noopener" underline="hover" color="text.secondary">
                 OpenAI
+              </Link>
+              <Link href="https://www.edamam.com/" target="_blank" rel="noopener" underline="hover" color="text.secondary">
+                Edamam API
               </Link>
             </Box>
           </Grid>
@@ -93,7 +93,7 @@ const Footer: React.FC = () => {
         
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
           <Typography variant="body2" color="text.secondary">
-            © {new Date().getFullYear()} AI-Powered Recipe Recommender. All rights reserved.
+            © {new Date().getFullYear()} Savorly. All rights reserved.
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, mt: { xs: 2, sm: 0 } }}>
             <Link href="#" underline="hover" color="text.secondary" variant="body2">

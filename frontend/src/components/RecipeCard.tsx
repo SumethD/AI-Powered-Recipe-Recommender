@@ -27,7 +27,6 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 interface RecipeCardProps {
   recipe: Recipe;
-  apiProvider?: string;
   user?: any; // User object to check if logged in
   toggleFavorite?: (recipe: Recipe, event: React.MouseEvent) => void;
   isFavoritesPage?: boolean; // Flag to indicate if this card is being used on the favorites page
@@ -113,7 +112,6 @@ const FavoriteButton = styled(IconButton)(({ theme }) => ({
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ 
   recipe, 
-  apiProvider, 
   user, 
   toggleFavorite,
   isFavoritesPage = false
@@ -128,7 +126,6 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
     navigate(`/recipe/${recipe.id}`, {
       state: {
         recipe: recipe,
-        apiProvider: apiProvider
       }
     });
   };

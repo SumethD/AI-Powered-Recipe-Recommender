@@ -20,6 +20,7 @@ import {
   Kitchen as KitchenIcon,
   Assistant as AssistantIcon,
   BookmarkAdd as BookmarkIcon,
+  YouTube as YouTubeIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
@@ -104,7 +105,7 @@ const Home: React.FC = () => {
         }}
       >
         <Typography variant="h2" component="h1" gutterBottom>
-          AI-Powered Recipe Recommender
+          Savorly
         </Typography>
         <Typography variant="h5" color="text.secondary" paragraph>
           Find, modify, and create recipes based on your preferences and available ingredients.
@@ -222,18 +223,18 @@ const Home: React.FC = () => {
           <Grid item xs={12} md={4}>
             <FeatureCard>
               <IconWrapper className="feature-icon">
-                <BookmarkIcon sx={{ fontSize: 36, color: theme.palette.text.secondary }} />
+                <YouTubeIcon sx={{ fontSize: 36, color: theme.palette.text.secondary }} />
               </IconWrapper>
               <Typography variant="h6" gutterBottom fontWeight="bold">
-                Save Favorites
+                Video to Recipe
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                Save your favorite recipes for easy access later.
+                Convert cooking videos into detailed, structured recipes.
               </Typography>
               <FeatureButton
                 variant="outlined"
                 color="primary"
-                onClick={() => navigate('/favorites')}
+                onClick={() => navigate('/video-to-recipe')}
                 className="feature-button"
               >
                 Try It

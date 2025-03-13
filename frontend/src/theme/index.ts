@@ -1,40 +1,74 @@
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
-import { deepPurple, amber, grey, blueGrey } from '@mui/material/colors';
+import { grey } from '@mui/material/colors';
+
+// Create a fresh, food-inspired color palette
+const palette = {
+  sage: {
+    light: '#b5c9a1',
+    main: '#8BA872', // Sage green - primary color
+    dark: '#5e7348',
+    contrastText: '#ffffff',
+  },
+  terracotta: {
+    light: '#f0a48a',
+    main: '#E07A5F', // Warm terracotta - accent color
+    dark: '#c15642',
+    contrastText: '#ffffff',
+  },
+  cream: {
+    light: '#fffef8',
+    main: '#F8F4E3', // Soft cream - background
+    dark: '#eae7d5',
+    contrastText: '#2a2a2a',
+  },
+  olive: {
+    light: '#94a187',
+    main: '#697A63', // Olive green - secondary color
+    dark: '#495545',
+    contrastText: '#ffffff',
+  },
+  neutral: {
+    light: '#f4f4f4',
+    main: '#EDEDE9', // Soft neutral - background
+    dark: '#d6d6d6',
+    contrastText: '#3a3a3a',
+  },
+};
 
 // Create a theme instance
 let theme = createTheme({
   palette: {
     primary: {
-      main: deepPurple[600],
-      light: deepPurple[400],
-      dark: deepPurple[800],
-      contrastText: '#ffffff',
+      main: palette.sage.main,
+      light: palette.sage.light,
+      dark: palette.sage.dark,
+      contrastText: palette.sage.contrastText,
     },
     secondary: {
-      main: amber[500],
-      light: amber[300],
-      dark: amber[700],
-      contrastText: '#000000',
+      main: palette.terracotta.main,
+      light: palette.terracotta.light,
+      dark: palette.terracotta.dark,
+      contrastText: palette.terracotta.contrastText,
     },
     background: {
-      default: '#f8f9fa',
+      default: palette.cream.light,
       paper: '#ffffff',
     },
     text: {
-      primary: grey[900],
-      secondary: grey[700],
+      primary: '#3a3a3a',
+      secondary: '#5a5a5a',
     },
     error: {
       main: '#e53935',
     },
     warning: {
-      main: '#ff9800',
+      main: '#f5b942',
     },
     info: {
-      main: '#2196f3',
+      main: '#81a4cd',
     },
     success: {
-      main: '#4caf50',
+      main: '#7cb083',
     },
   },
   typography: {
@@ -51,26 +85,32 @@ let theme = createTheme({
     h1: {
       fontFamily: 'Poppins, sans-serif',
       fontWeight: 700,
+      color: '#3a3a3a',
     },
     h2: {
       fontFamily: 'Poppins, sans-serif',
       fontWeight: 700,
+      color: '#3a3a3a',
     },
     h3: {
       fontFamily: 'Poppins, sans-serif',
       fontWeight: 600,
+      color: '#3a3a3a',
     },
     h4: {
       fontFamily: 'Poppins, sans-serif',
       fontWeight: 600,
+      color: '#3a3a3a',
     },
     h5: {
       fontFamily: 'Poppins, sans-serif',
       fontWeight: 500,
+      color: '#3a3a3a',
     },
     h6: {
       fontFamily: 'Poppins, sans-serif',
       fontWeight: 500,
+      color: '#3a3a3a',
     },
     subtitle1: {
       fontFamily: 'Inter, sans-serif',
@@ -103,12 +143,12 @@ let theme = createTheme({
           padding: '10px 24px',
           boxShadow: 'none',
           '&:hover': {
-            boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.08)',
           },
         },
         contained: {
           '&:hover': {
-            boxShadow: '0 6px 12px rgba(0,0,0,0.15)',
+            boxShadow: '0 6px 12px rgba(0,0,0,0.12)',
           },
         },
       },
@@ -117,11 +157,11 @@ let theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
           '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: '0 12px 20px rgba(0,0,0,0.1)',
+            boxShadow: '0 12px 20px rgba(0,0,0,0.08)',
           },
         },
       },
@@ -130,19 +170,19 @@ let theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         },
         elevation1: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
         },
         elevation2: {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
         },
         elevation3: {
-          boxShadow: '0 6px 16px rgba(0,0,0,0.05)',
+          boxShadow: '0 6px 16px rgba(0,0,0,0.04)',
         },
         elevation4: {
-          boxShadow: '0 8px 24px rgba(0,0,0,0.05)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.04)',
         },
       },
     },
@@ -152,10 +192,10 @@ let theme = createTheme({
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
             '&:hover .MuiOutlinedInput-notchedOutline': {
-              borderColor: deepPurple[300],
+              borderColor: palette.sage.light,
             },
             '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-              borderColor: deepPurple[500],
+              borderColor: palette.sage.main,
             },
           },
         },
@@ -172,7 +212,7 @@ let theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
           borderRadius: 0,
         },
       },
