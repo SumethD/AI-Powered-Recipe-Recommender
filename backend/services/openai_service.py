@@ -477,6 +477,7 @@ Follow these guidelines:
 7. Include any tips, variations, or storage instructions mentioned.
 8. If the transcript has unclear or missing information, make reasonable inferences but mark them as [Estimated].
 9. If the transcript doesn't contain a recipe or is unrelated to cooking, respond with "No recipe found in this video."
+10. Calculate and include nutritional information per serving based on the ingredients and quantities.
 
 Format your response as follows:
 # [Recipe Title]
@@ -499,6 +500,15 @@ Format your response as follows:
 2. [Step two]
 ...
 
+## Nutritional Information (per serving)
+- Calories: [value] kcal
+- Protein: [value] g
+- Carbohydrates: [value] g
+- Fat: [value] g
+- Fiber: [value] g
+- Sugar: [value] g
+- Sodium: [value] mg
+
 ## Tips (if any)
 - [Tip one]
 - [Tip two]
@@ -513,7 +523,7 @@ Format your response as follows:
 
 {transcript}
 
-Please format the response as a complete recipe with all details mentioned in the transcript."""
+Please format the response as a complete recipe with all details mentioned in the transcript. Make sure to include nutritional information per serving based on the ingredients and their quantities."""
 
         # Create the messages for the chat completion
         messages = [

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Card, 
@@ -16,7 +16,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Button
+  Button,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  DialogContentText
 } from '@mui/material';
 import { Recipe } from '../context/RecipeContext';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
@@ -24,9 +29,13 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { useShoppingList } from '../context/ShoppingListContext';
 
 interface RecipeCardProps {
   recipe: Recipe;
+  apiProvider?: string;
   user?: any; // User object to check if logged in
   toggleFavorite?: (recipe: Recipe, event: React.MouseEvent) => void;
   isFavoritesPage?: boolean; // Flag to indicate if this card is being used on the favorites page
@@ -112,6 +121,7 @@ const FavoriteButton = styled(IconButton)(({ theme }) => ({
 
 const RecipeCard: React.FC<RecipeCardProps> = ({ 
   recipe, 
+  apiProvider, 
   user, 
   toggleFavorite,
   isFavoritesPage = false
@@ -119,13 +129,30 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
-  const [loginDialogOpen, setLoginDialogOpen] = React.useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const { addRecipeToList, isRecipeInList } = useShoppingList();
+  const [showAddedMessage, setShowAddedMessage] = useState(false);
+  
+  const isInShoppingList = isRecipeInList && recipe.id ? isRecipeInList(recipe.id) : false;
+  
+  // Handle showing the added to shopping list message
+  React.useEffect(() => {
+    if (showAddedMessage) {
+      const timer = setTimeout(() => {
+        setShowAddedMessage(false);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showAddedMessage]);
 
   const handleClick = () => {
     // Navigate to recipe details page
     navigate(`/recipe/${recipe.id}`, {
       state: {
         recipe: recipe,
+        apiProvider: apiProvider
       }
     });
   };
@@ -139,6 +166,23 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
     } else if (toggleFavorite) {
       // If user is logged in and toggleFavorite function is provided, call it
       toggleFavorite(recipe, event);
+    }
+  };
+  
+  const handleMenuOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+  };
+
+  const handleAddToShoppingList = () => {
+    if (recipe && addRecipeToList) {
+      addRecipeToList(recipe);
+      setShowAddedMessage(true);
+      handleMenuClose();
     }
   };
 
@@ -208,6 +252,27 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
               }
             </FavoriteButton>
             
+            {/* Shopping list notification */}
+            {showAddedMessage && (
+              <Box 
+                sx={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  color: 'white',
+                  textAlign: 'center',
+                  py: 1,
+                  zIndex: 20,
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                  Added to Shopping List
+                </Typography>
+              </Box>
+            )}
+            
             {/* Time chip positioned on the image */}
             {recipe.readyInMinutes && recipe.readyInMinutes > 0 && (
               <Box sx={{ position: 'absolute', top: 12, right: 12 }}>
@@ -263,18 +328,23 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
               </Typography>
             )}
             
-            {recipe.diets && recipe.diets.length > 0 && (
+            <Box sx={{ 
+              mt: 'auto', 
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
               <Stack 
                 direction="row" 
                 spacing={0.5} 
                 sx={{ 
-                  mt: 'auto', 
                   flexWrap: 'wrap', 
                   gap: 0.5,
-                  pb: 0.5
+                  pb: 0.5,
+                  flexGrow: 1
                 }}
               >
-                {recipe.diets.slice(0, 3).map((diet, index) => (
+                {recipe.diets && recipe.diets.length > 0 && recipe.diets.slice(0, 3).map((diet, index) => (
                   <Chip 
                     key={index} 
                     label={diet} 
@@ -295,7 +365,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
                     }} 
                   />
                 ))}
-                {recipe.diets.length > 3 && (
+                {recipe.diets && recipe.diets.length > 3 && (
                   <Chip 
                     label={`+${recipe.diets.length - 3}`} 
                     size="small" 
@@ -307,7 +377,34 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
                   />
                 )}
               </Stack>
-            )}
+              
+              {/* Options menu button */}
+              <IconButton 
+                sx={{ 
+                  padding: 4,
+                  width: 28,
+                  height: 28,
+                  minWidth: 28,
+                  minHeight: 28,
+                  ml: 1,
+                  color: theme.palette.text.secondary,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                    color: theme.palette.primary.main,
+                    transform: 'rotate(90deg)',
+                  },
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleMenuOpen(e);
+                }}
+                size="small"
+                aria-label="more options"
+              >
+                <MoreVertIcon fontSize="small" sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
           </CardContent>
         </CardActionArea>
       </StyledCard>
@@ -316,9 +413,9 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
       <Dialog open={loginDialogOpen} onClose={() => setLoginDialogOpen(false)}>
         <DialogTitle>Login Required</DialogTitle>
         <DialogContent>
-          <Typography variant="body1">
-            You need to be logged in to save recipes to your favorites.
-          </Typography>
+          <DialogContentText>
+            You need to log in to save recipes to your favorites.
+          </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'center', gap: 2 }}>
           <Button 
@@ -344,6 +441,43 @@ const RecipeCard: React.FC<RecipeCardProps> = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Shopping List Menu */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleMenuClose}
+        onClick={(e) => e.stopPropagation()}
+        PaperProps={{
+          elevation: 3,
+          sx: {
+            minWidth: 200,
+            borderRadius: 2,
+            overflow: 'visible',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.15)',
+          },
+        }}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem 
+          onClick={handleAddToShoppingList}
+          disabled={isInShoppingList}
+        >
+          <ListItemIcon>
+            <ShoppingCartIcon fontSize="small" color={isInShoppingList ? "disabled" : "primary"} />
+          </ListItemIcon>
+          <ListItemText>
+            {isInShoppingList ? "Already in Shopping List" : "Add to Shopping List"}
+          </ListItemText>
+        </MenuItem>
+      </Menu>
     </>
   );
 };

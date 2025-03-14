@@ -186,7 +186,7 @@ function VideoToRecipe() {
         </Typography>
         
         <Typography variant="subtitle1" color="text.secondary" align="center" sx={{ mb: 4 }}>
-          Convert any cooking YouTube video into a detailed, structured recipe
+          Convert any cooking YouTube video into a detailed, structured recipe with complete nutritional information
         </Typography>
         
         <Paper 
@@ -292,6 +292,9 @@ function VideoToRecipe() {
                   maxHeight: '800px'
                 }}
               >
+                <Typography variant="h6" gutterBottom>
+                  Recipe with Nutritional Information
+                </Typography>
                 {recipe && <ReactMarkdown>{recipe}</ReactMarkdown>}
               </Paper>
             </Grid>
@@ -333,7 +336,7 @@ function VideoToRecipe() {
                     3. Get Structured Recipe
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Receive a detailed, formatted recipe you can save, print, or share
+                    Receive a detailed, formatted recipe with nutritional information that you can save, print, or share
                   </Typography>
                 </Box>
               </Grid>

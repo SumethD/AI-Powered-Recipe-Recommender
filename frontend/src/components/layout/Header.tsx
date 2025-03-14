@@ -36,11 +36,14 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   MoreVert as MoreVertIcon,
+  ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { useUser } from '../../context/UserContext';
+import { useShoppingList } from '../../context/ShoppingListContext';
 
 const Header: React.FC = () => {
   const { user, setUser } = useUser();
+  const { selectedRecipes } = useShoppingList();
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -102,6 +105,13 @@ const Header: React.FC = () => {
     { text: 'Home', path: '/', icon: <HomeIcon /> },
     { text: 'Search', path: '/search', icon: <SearchIcon /> },
     { text: 'Favorites', path: '/favorites', icon: <FavoriteIcon /> },
+    { 
+      text: 'Shopping List', 
+      path: '/shopping-list', 
+      icon: <Badge badgeContent={selectedRecipes.length} color="secondary" showZero={false}>
+        <ShoppingCartIcon />
+      </Badge> 
+    },
   ];
 
   // Secondary navigation items that go in the "More" dropdown on desktop

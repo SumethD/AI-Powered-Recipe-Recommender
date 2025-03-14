@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { RecipeProvider } from './context/RecipeContext';
 import { ChatProvider } from './context/ChatContext';
 import { UserProvider } from './context/UserContext';
+import { ShoppingListProvider } from './context/ShoppingListContext';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Import fonts
@@ -44,6 +45,8 @@ import ApiTest from './components/ApiTest';
 import VideoToRecipe from './pages/VideoToRecipe.jsx';
 // @ts-ignore
 import ApiDebug from './pages/ApiDebug.jsx';
+// @ts-ignore
+import ShoppingList from './pages/ShoppingList.jsx';
 
 function App() {
   return (
@@ -52,27 +55,30 @@ function App() {
       <UserProvider>
         <RecipeProvider>
           <ChatProvider>
-            <Router>
-              <div className="App">
-                <Header />
-                <main style={{ minHeight: 'calc(100vh - 128px)', padding: '24px' }}>
-                  <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/search" element={<RecipeSearch />} />
-                    <Route path="/recipe/:id" element={<RecipeDetails />} />
-                    <Route path="/chat" element={<ChatAssistant />} />
-                    <Route path="/profile" element={<UserProfile />} />
-                    <Route path="/favorites" element={<Favorites />} />
-                    <Route path="/video-to-recipe" element={<VideoToRecipe />} />
-                    <Route path="/api-debug" element={<ApiDebug />} />
-                    <Route path="/test-recipe-flow" element={<TestRecipeFlow />} />
-                    <Route path="/api-test" element={<ApiTest />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-                <Footer />
-              </div>
-            </Router>
+            <ShoppingListProvider>
+              <Router>
+                <div className="App">
+                  <Header />
+                  <main style={{ minHeight: 'calc(100vh - 128px)', padding: '24px' }}>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/search" element={<RecipeSearch />} />
+                      <Route path="/recipe/:id" element={<RecipeDetails />} />
+                      <Route path="/chat" element={<ChatAssistant />} />
+                      <Route path="/profile" element={<UserProfile />} />
+                      <Route path="/favorites" element={<Favorites />} />
+                      <Route path="/video-to-recipe" element={<VideoToRecipe />} />
+                      <Route path="/shopping-list" element={<ShoppingList />} />
+                      <Route path="/api-debug" element={<ApiDebug />} />
+                      <Route path="/test-recipe-flow" element={<TestRecipeFlow />} />
+                      <Route path="/api-test" element={<ApiTest />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </main>
+                  <Footer />
+                </div>
+              </Router>
+            </ShoppingListProvider>
           </ChatProvider>
         </RecipeProvider>
       </UserProvider>
