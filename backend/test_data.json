@@ -1,0 +1,68 @@
+{
+  "recipes": [
+    {
+      "id": "123",
+      "title": "Chocolate Cake",
+      "servings": 8,
+      "extendedIngredients": [
+        {
+          "name": "all-purpose flour",
+          "amount": 2,
+          "unit": "cups"
+        },
+        {
+          "name": "granulated sugar",
+          "amount": 1.5,
+          "unit": "cups"
+        },
+        {
+          "name": "unsalted butter",
+          "amount": 0.5,
+          "unit": "cup"
+        },
+        {
+          "name": "eggs",
+          "amount": 2,
+          "unit": ""
+        },
+        {
+          "name": "milk",
+          "amount": 1,
+          "unit": "cup"
+        }
+      ]
+    },
+    {
+      "id": "456",
+      "title": "Pancakes",
+      "servings": 4,
+      "extendedIngredients": [
+        {
+          "name": "all-purpose flour",
+          "amount": 1,
+          "unit": "cup"
+        },
+        {
+          "name": "milk",
+          "amount": 0.75,
+          "unit": "cup"
+        },
+        {
+          "name": "eggs",
+          "amount": 1,
+          "unit": ""
+        },
+        {
+          "name": "granulated sugar",
+          "amount": 2,
+          "unit": "tablespoons"
+        },
+        {
+          "name": "baking powder",
+          "amount": 1,
+          "unit": "teaspoon"
+        }
+      ]
+    }
+  ]
+} 

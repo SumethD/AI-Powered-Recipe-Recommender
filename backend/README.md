@@ -63,6 +63,10 @@ This is the backend for the AI-Powered Recipe Recommender application. It's buil
 - `GET /api/recipes/random`: Get random recipes
 - `GET /api/recipes/:id`: Get recipe details
 
+### Shopping List Endpoints
+
+- `POST /api/shopping-list/generate`: Generate a shopping list from a list of recipes
+
 ### User Endpoints
 
 - `GET /api/users/:id`: Get user information
@@ -260,6 +264,63 @@ The application includes a robust error handling system that:
   }
 }
 ```
+
+### Shopping List Endpoints
+
+#### Generate Shopping List
+
+**Endpoint:** `/api/shopping-list/generate`
+**Method:** POST
+**Description:** Generates a consolidated shopping list from multiple recipes
+
+**Request Body:**
+```json
+{
+  "recipes": [
+    {
+      "id": "123",
+      "title": "Recipe Title",
+      "servings": 4,
+      "extendedIngredients": [
+        {
+          "name": "ingredient name",
+          "amount": 2,
+          "unit": "cups"
+        },
+        ...
+      ]
+    },
+    ...
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "shoppingList": [
+    {
+      "id": "1",
+      "name": "ingredient name",
+      "amount": 2,
+      "formatted_amount": "2",
+      "unit": "cups",
+      "category": "Category Name",
+      "checked": false,
+      "standardizedDisplay": "265 g"
+    },
+    ...
+  ]
+}
+```
+
+**Features:**
+- Aggregates duplicate ingredients across recipes
+- Standardizes units (converts to metric when appropriate)
+- Categorizes ingredients by type (produce, dairy, meat, etc.)
+- Provides both original and standardized measurements
+- Formats quantities in a human-readable format (e.g., fractions for small amounts)
 
 ### Chat Endpoints
 

@@ -41,6 +41,8 @@ export interface ShoppingListItem {
 export interface ShoppingListContextType {
   selectedRecipes: Recipe[];
   shoppingList: ShoppingListItem[];
+  totalCount: number;
+  checkedCount: number;
   addRecipeToList: (recipe: Recipe) => void;
   removeRecipeFromList: (recipeId: number | string) => void;
   clearShoppingList: () => void;
@@ -128,9 +130,11 @@ const generateId = (): string => {
 };
 
 // Provider component
-export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) => {
+export const ShoppingListProvider: React.FC<ShoppingListProviderProps> = ({ children }) => {
   const [selectedRecipes, setSelectedRecipes] = useState<Recipe[]>([]);
   const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [checkedCount, setCheckedCount] = useState<number>(0);
   
   // Load from localStorage on init
   useEffect(() => {
@@ -190,6 +194,8 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
   const clearShoppingList = () => {
     setSelectedRecipes([]);
     setShoppingList([]);
+    setTotalCount(0);
+    setCheckedCount(0);
   };
   
   // Normalize ingredient units for better aggregation
@@ -232,111 +238,54 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
   };
   
   // Generate the shopping list from the selected recipes
-  const generateShoppingList = () => {
-    // Get all ingredients from selected recipes
-    const allIngredients: {
-      name: string;
-      amount: number;
-      unit: string;
-      recipeId: number | string;
-    }[] = [];
-    
-    selectedRecipes.forEach(recipe => {
-      if (recipe.extendedIngredients) {
-        recipe.extendedIngredients.forEach(ingredient => {
-          // Handle cases where amount might be a string (like "1/2")
-          let ingredientAmount = ingredient.amount;
-          if (typeof ingredientAmount === 'string') {
-            ingredientAmount = parseFraction(ingredientAmount);
-          }
+  const generateShoppingList = async () => {
+    if (selectedRecipes.length === 0) {
+      console.log("No recipes selected to generate shopping list");
+      return;
+    }
 
-          allIngredients.push({
-            name: normalizeIngredientName(ingredient.name),
-            amount: ingredientAmount,
-            unit: normalizeUnit(ingredient.unit),
-            recipeId: recipe.id
-          });
-        });
+    try {
+      // Call the backend API to generate the shopping list
+      const response = await fetch('/api/shopping-list/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ recipes: selectedRecipes })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed with status: ${response.status}`);
       }
-    });
-    
-    // Aggregate ingredients
-    const aggregatedIngredients: Record<string, ShoppingListItem> = {};
-    
-    allIngredients.forEach(ingredient => {
-      const key = `${ingredient.name}|${ingredient.unit}`;
+
+      const data = await response.json();
       
-      // Standardize the ingredient measurement
-      const { amount: standardizedAmount, unit: standardizedUnit } = standardizeIngredientMeasurement(
-        ingredient.amount,
-        ingredient.unit,
-        ingredient.name
-      );
-      
-      // Create display string for standardized measurement
-      const standardizedDisplay = formatIngredientMeasurement(
-        standardizedAmount,
-        standardizedUnit,
-        ingredient.name
-      );
-      
-      if (aggregatedIngredients[key]) {
-        // Update existing ingredient
-        aggregatedIngredients[key].amount += ingredient.amount;
-        
-        // Update standardized amount based on new total
-        const { amount: newStandardizedAmount } = standardizeIngredientMeasurement(
-          aggregatedIngredients[key].amount,
-          ingredient.unit,
-          ingredient.name
-        );
-        
-        // Update standardized display
-        aggregatedIngredients[key].standardizedDisplay = formatIngredientMeasurement(
-          newStandardizedAmount,
-          standardizedUnit,
-          ingredient.name
-        );
-        
-        // Add recipe reference if not already present
-        if (!aggregatedIngredients[key].recipeIds.includes(ingredient.recipeId)) {
-          aggregatedIngredients[key].recipeIds.push(ingredient.recipeId);
-        }
+      if (data.success) {
+        // Use the shopping list and stats from the backend
+        setShoppingList(data.shoppingList);
+        setTotalCount(data.totalCount || data.shoppingList.length);
+        setCheckedCount(data.checkedCount || 0);
       } else {
-        // Create new ingredient
-        aggregatedIngredients[key] = {
-          id: generateId(),
-          name: ingredient.name,
-          amount: ingredient.amount,
-          unit: ingredient.unit,
-          originalAmount: ingredient.amount,
-          originalUnit: ingredient.unit,
-          standardizedDisplay: standardizedDisplay,
-          category: categorizeIngredient(ingredient.name),
-          checked: false,
-          recipeIds: [ingredient.recipeId]
-        };
+        console.error("Error generating shopping list:", data.error);
       }
-    });
-    
-    // Convert to array and sort by category
-    const newShoppingList = Object.values(aggregatedIngredients).sort((a, b) => {
-      if (a.category !== b.category) {
-        return a.category.localeCompare(b.category);
-      }
-      return a.name.localeCompare(b.name);
-    });
-    
-    setShoppingList(newShoppingList);
+    } catch (error) {
+      console.error("Failed to generate shopping list:", error);
+    }
   };
   
   // Toggle the checked status of an item
   const toggleItemChecked = (itemId: string) => {
-    setShoppingList(prevList => 
-      prevList.map(item => 
+    setShoppingList(prevList => {
+      const newList = prevList.map(item => 
         item.id === itemId ? { ...item, checked: !item.checked } : item
-      )
-    );
+      );
+      
+      // Update checkedCount based on the new list
+      const newCheckedCount = newList.filter(item => item.checked).length;
+      setCheckedCount(newCheckedCount);
+      
+      return newList;
+    });
   };
   
   // Update the amount of an item
@@ -346,16 +295,31 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
       return;
     }
     
-    setShoppingList(prevList => 
-      prevList.map(item => 
+    setShoppingList(prevList => {
+      const newList = prevList.map(item => 
         item.id === itemId ? { ...item, amount } : item
-      )
-    );
+      );
+      return newList;
+    });
   };
   
   // Remove an item from the list
   const removeItemFromList = (itemId: string) => {
-    setShoppingList(prevList => prevList.filter(item => item.id !== itemId));
+    setShoppingList(prevList => {
+      // Check if the item being removed is checked
+      const removedItem = prevList.find(item => item.id === itemId);
+      const newList = prevList.filter(item => item.id !== itemId);
+      
+      // If the removed item was checked, update the checked count
+      if (removedItem?.checked) {
+        setCheckedCount(prev => prev - 1);
+      }
+      
+      // Update total count
+      setTotalCount(newList.length);
+      
+      return newList;
+    });
   };
   
   return (
@@ -363,6 +327,8 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
       value={{
         selectedRecipes,
         shoppingList,
+        totalCount,
+        checkedCount,
         addRecipeToList,
         removeRecipeFromList,
         clearShoppingList,
