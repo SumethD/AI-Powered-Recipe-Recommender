@@ -9,7 +9,6 @@ from services.user_service import get_user, get_user_favorites, add_favorite, re
 from routes.chat_routes import chat_bp
 from routes.recipe_routes import recipe_bp
 from routes.video_routes import video_bp
-from routes.shopping_list_routes import shopping_list_bp
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from recipe_instructions_service import get_recipe_instructions
@@ -47,7 +46,6 @@ CORS(app)
 app.register_blueprint(recipe_bp, url_prefix='/api/recipes')
 app.register_blueprint(chat_bp, url_prefix='/api/chat')
 app.register_blueprint(video_bp, url_prefix='/api/videos')
-app.register_blueprint(shopping_list_bp, url_prefix='/api/shopping-list')
 
 # Add a test endpoint to check if the edamam_service is being imported correctly
 @app.route('/api/test-edamam', methods=['GET'])
