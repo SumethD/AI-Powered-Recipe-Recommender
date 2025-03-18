@@ -328,13 +328,4 @@ finally {
     }
     
     Write-Host "All services stopped." -ForegroundColor Green
-}
-
-# First, make sure python-dotenv is installed
-pip install python-dotenv
-
-# Navigate to the backend directory
-cd backend
-
-# Start the Flask application
-python app.py 
+} 

@@ -6,7 +6,10 @@ import { RecipeProvider } from './context/RecipeContext';
 import { ChatProvider } from './context/ChatContext';
 import { UserProvider } from './context/UserContext';
 import { ShoppingListProvider } from './context/ShoppingListContext';
+import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+// @ts-ignore
+import AuthGuard from './components/auth/AuthGuard.jsx';
 
 // Import fonts
 import '@fontsource/roboto/300.css';
@@ -47,41 +50,73 @@ import VideoToRecipe from './pages/VideoToRecipe.jsx';
 import ApiDebug from './pages/ApiDebug.jsx';
 // @ts-ignore
 import ShoppingList from './pages/ShoppingList.jsx';
+// @ts-ignore
+import Login from './pages/Login.jsx';
+// @ts-ignore
+import Register from './pages/Register.jsx';
 
-function App() {
+function App(): JSX.Element {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <UserProvider>
-        <RecipeProvider>
-          <ChatProvider>
-            <ShoppingListProvider>
-              <Router>
-                <div className="App">
-                  <Header />
-                  <main style={{ minHeight: 'calc(100vh - 128px)', padding: '24px' }}>
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/search" element={<RecipeSearch />} />
-                      <Route path="/recipe/:id" element={<RecipeDetails />} />
-                      <Route path="/chat" element={<ChatAssistant />} />
-                      <Route path="/profile" element={<UserProfile />} />
-                      <Route path="/favorites" element={<Favorites />} />
-                      <Route path="/video-to-recipe" element={<VideoToRecipe />} />
-                      <Route path="/shopping-list" element={<ShoppingList />} />
-                      <Route path="/api-debug" element={<ApiDebug />} />
-                      <Route path="/test-recipe-flow" element={<TestRecipeFlow />} />
-                      <Route path="/api-test" element={<ApiTest />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </main>
-                  <Footer />
-                </div>
-              </Router>
-            </ShoppingListProvider>
-          </ChatProvider>
-        </RecipeProvider>
-      </UserProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <UserProvider>
+            <RecipeProvider>
+              <ChatProvider>
+                {/* @ts-ignore - Ignore TS error for ShoppingListProvider */}
+                <ShoppingListProvider>
+                  <Router>
+                    <div className="App">
+                      <Header />
+                      <main style={{ minHeight: 'calc(100vh - 128px)', padding: '24px' }}>
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/search" element={<RecipeSearch />} />
+                          <Route path="/recipe/:id" element={<RecipeDetails />} />
+                          <Route path="/chat" element={<ChatAssistant />} />
+                          <Route 
+                            path="/profile" 
+                            element={
+                              <AuthGuard>
+                                <UserProfile />
+                              </AuthGuard>
+                            } 
+                          />
+                          <Route 
+                            path="/favorites" 
+                            element={
+                              <AuthGuard>
+                                <Favorites />
+                              </AuthGuard>
+                            } 
+                          />
+                          <Route path="/video-to-recipe" element={<VideoToRecipe />} />
+                          <Route 
+                            path="/shopping-list" 
+                            element={
+                              <AuthGuard>
+                                <ShoppingList />
+                              </AuthGuard>
+                            } 
+                          />
+                          <Route path="/api-debug" element={<ApiDebug />} />
+                          <Route path="/test-recipe-flow" element={<TestRecipeFlow />} />
+                          <Route path="/api-test" element={<ApiTest />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </main>
+                      <Footer />
+                    </div>
+                  </Router>
+                </ShoppingListProvider>
+              </ChatProvider>
+            </RecipeProvider>
+          </UserProvider>
+        </AuthProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

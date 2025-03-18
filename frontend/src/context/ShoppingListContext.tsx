@@ -232,7 +232,37 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
   };
   
   // Generate the shopping list from the selected recipes
-  const generateShoppingList = () => {
+  const generateShoppingList = async () => {
+    try {
+      // Display loading state if needed
+      // Create a request to the backend API
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/shopping-list/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipes: selectedRecipes
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error generating shopping list:', errorData);
+        throw new Error(errorData.error || 'Failed to generate shopping list');
+      }
+      
+      const data = await response.json();
+      setShoppingList(data.shopping_list);
+    } catch (error) {
+      console.error('Error generating shopping list:', error);
+      // Fallback to generating client-side if the API fails
+      generateShoppingListClientSide();
+    }
+  };
+  
+  // Fallback function that generates the list on the client side (using the original implementation)
+  const generateShoppingListClientSide = () => {
     // Get all ingredients from selected recipes
     const allIngredients: {
       name: string;
