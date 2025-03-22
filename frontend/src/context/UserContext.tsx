@@ -66,23 +66,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       // Save user ID to localStorage for persistence
       localStorage.setItem('userId', userId);
       
-      // Create a basic user object
-      const newUser: User = {
-        id: userId,
-        name: 'User',
-        preferences: {
-          diets: [],
-          intolerances: [],
-          cuisines: [],
-          dietary_restrictions: [],
-          allergies: [],
-          favorite_cuisines: [],
-          cooking_skill: 'beginner'
-        },
-      };
-      
-      setUser(newUser);
-      
       // Load user preferences asynchronously
       loadUserPreferences(userId);
       
@@ -103,18 +86,16 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
     try {
       const response = await userApi.getPreferences(userId);
-      if (response && response.data && user) {
+      if (response && response.data) {
         setUser({
-          ...user,
-          preferences: {
-            ...user.preferences,
-            ...response.data
-          }
+          id: userId,
+          name: userId, // This will be replaced with actual user data from authentication
+          preferences: response.data
         });
       }
     } catch (err) {
       console.error('Error loading user preferences:', err);
-      // Don't set error state here to avoid disrupting the login flow
+      setError('Failed to load user preferences');
     }
   };
 

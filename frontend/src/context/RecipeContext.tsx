@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useUser } from './UserContext';
-import { recipeApi, userApi } from '../services/api';
+import { useAuth } from './AuthContext';
+import { recipeApi, userApi, savedRecipesApi } from '../services/api';
 
 // Define recipe types
 export interface Ingredient {
@@ -107,6 +108,7 @@ type RecipeProviderProps = {
 // Provider component
 export const RecipeProvider = ({ children }: RecipeProviderProps) => {
   const { user } = useUser();
+  const { user: authUser } = useAuth();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -115,12 +117,12 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
 
   // Load favorites when user changes
   useEffect(() => {
-    if (user) {
+    if (user && authUser) {
       loadFavorites();
     } else {
       setFavorites([]);
     }
-  }, [user]);
+  }, [user, authUser]);
 
   // Search recipes by ingredients
   const searchByIngredients = async (ingredients: string[], apiProvider: string = 'edamam'): Promise<void> => {
@@ -341,7 +343,7 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
 
   // Toggle favorite
   const toggleFavorite = async (recipe: Recipe): Promise<void> => {
-    if (!user) {
+    if (!user || !authUser) {
       setError('Please log in to save favorites');
       return;
     }
@@ -350,7 +352,9 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
       const isFavorite = favorites.some(fav => fav.id === recipe.id);
       
       if (isFavorite) {
-        await userApi.removeFavorite(user.id, recipe.id);
+        // Remove from favorites in Supabase
+        await savedRecipesApi.removeSavedRecipe(authUser.id, recipe.id.toString());
+        
         setFavorites(favorites.filter(fav => fav.id !== recipe.id));
         
         // Update recipes list if the recipe is in the current list
@@ -363,7 +367,9 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
           setSelectedRecipe({ ...selectedRecipe, isFavorite: false });
         }
       } else {
-        await userApi.addFavorite(user.id, recipe);
+        // Add to favorites in Supabase
+        await savedRecipesApi.saveRecipe(authUser.id, recipe.id.toString());
+        
         const favoriteRecipe = { ...recipe, isFavorite: true };
         setFavorites([...favorites, favoriteRecipe]);
         
@@ -385,23 +391,30 @@ export const RecipeProvider = ({ children }: RecipeProviderProps) => {
 
   // Load favorites
   const loadFavorites = async (): Promise<void> => {
-    if (!user) return;
+    if (!user || !authUser) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      const response = await userApi.getFavorites(user.id);
-      if (response && response.data) {
+      // Get saved recipe IDs from Supabase
+      const recipeIds = await savedRecipesApi.getSavedRecipeIds(authUser.id);
+      
+      if (recipeIds && recipeIds.length > 0) {
+        // Get recipe details for each ID
+        const recipeDetails = await savedRecipesApi.getRecipeBatch(recipeIds);
+        
         // Mark all as favorites
-        const markedFavorites = response.data.map((recipe: Recipe) => ({
+        const markedFavorites = recipeDetails.map((recipe: Recipe) => ({
           ...recipe,
           isFavorite: true
         }));
+        
         setFavorites(markedFavorites);
       } else {
         setFavorites([]);
       }
+      
       setIsLoading(false);
     } catch (err) {
       setError('Failed to load favorites');

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
+  Typography,
   Button,
   IconButton,
   Box,
@@ -17,9 +18,10 @@ import {
   ListItemIcon,
   ListItemText,
   Container,
-  Typography,
+  Tooltip,
   Divider,
   Badge,
+  Collapse,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -31,27 +33,61 @@ import {
   Restaurant as RestaurantIcon,
   Logout as LogoutIcon,
   VideoCall as VideoCallIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
   MoreVert as MoreVertIcon,
   ShoppingCart as ShoppingCartIcon,
 } from '@mui/icons-material';
 import { useUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 import { useShoppingList } from '../../context/ShoppingListContext';
-// @ts-ignore
-import HeaderAuthSection from '../auth/HeaderAuthSection.jsx';
 
 const Header: React.FC = () => {
-  const { user: contextUser } = useUser();
+  const { user: authUser, signOut } = useAuth();
+  const { user, setUser } = useUser();
   const { selectedRecipes } = useShoppingList();
   const location = useLocation();
-  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [moreMenuAnchorEl, setMoreMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
+  // Sync authUser with UserContext
+  React.useEffect(() => {
+    if (authUser && (!user || user.id !== authUser.id)) {
+      // Set basic user info from auth
+      setUser({
+        id: authUser.id,
+        name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User',
+        preferences: {
+          diets: [],
+          intolerances: [],
+          cuisines: [],
+          dietary_restrictions: [],
+          allergies: [],
+          favorite_cuisines: [],
+          cooking_skill: 'beginner'
+        }
+      });
+    } else if (!authUser && user) {
+      // Clear user when logged out
+      setUser(null);
+    }
+  }, [authUser, user, setUser]);
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
+  };
+
+  const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
   };
 
   const handleMoreMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -60,6 +96,38 @@ const Header: React.FC = () => {
 
   const handleMoreMenuClose = () => {
     setMoreMenuAnchorEl(null);
+  };
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+      handleProfileMenuClose();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  // Get display name for the avatar
+  const getDisplayName = () => {
+    if (!user) return '';
+    return user.name || user.id;
+  };
+
+  // Get first letter for avatar
+  const getAvatarLetter = () => {
+    const displayName = getDisplayName();
+    return displayName.charAt(0).toUpperCase();
+  };
+
+  // Get cooking skill level display
+  const getCookingSkillDisplay = () => {
+    if (!user?.preferences?.cooking_skill) return 'Beginner cook';
+    return `${user.preferences.cooking_skill} cook`;
   };
 
   // Primary navigation items that always show in the main bar
@@ -132,7 +200,7 @@ const Header: React.FC = () => {
           </ListItem>
         ))}
       </List>
-      {contextUser && (
+      {user && (
         <>
           <Divider />
           <Box sx={{ p: 2, display: 'flex', alignItems: 'center', bgcolor: '#F8F4E3' }}>
@@ -144,14 +212,14 @@ const Header: React.FC = () => {
                 mr: 2
               }}
             >
-              {contextUser.name.charAt(0).toUpperCase()}
+              {getAvatarLetter()}
             </Avatar>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#3a3a3a' }}>
-                {contextUser.name}
+                {getDisplayName()}
               </Typography>
               <Typography variant="body2" sx={{ color: '#5a5a5a' }}>
-                {contextUser.preferences?.cooking_skill || 'beginner'} cook
+                {getCookingSkillDisplay()}
               </Typography>
             </Box>
           </Box>
@@ -167,10 +235,7 @@ const Header: React.FC = () => {
               </ListItemIcon>
               <ListItemText primary="Profile" primaryTypographyProps={{ color: '#3a3a3a' }} />
             </ListItem>
-            <ListItem button onClick={() => {
-              setDrawerOpen(false);
-              navigate('/login');
-            }}>
+            <ListItem button onClick={handleLogout}>
               <ListItemIcon>
                 <LogoutIcon sx={{ color: theme.palette.error.main }} />
               </ListItemIcon>
@@ -335,9 +400,118 @@ const Header: React.FC = () => {
               </Box>
             )}
             
-            {/* Login/Register or User Menu */}
+            {/* Login button or user profile */}
             <Box sx={{ ml: { xs: 1, sm: 2 } }}>
-              <HeaderAuthSection />
+              {user ? (
+                <>
+                  <Tooltip title="Account settings">
+                    <IconButton
+                      onClick={handleProfileMenuOpen}
+                      color="inherit"
+                      aria-label="account of current user"
+                      aria-controls="menu-appbar"
+                      aria-haspopup="true"
+                      sx={{ 
+                        p: 0.5,
+                        borderRadius: 1,
+                        border: '2px solid rgba(248, 244, 227, 0.3)',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          border: '2px solid rgba(248, 244, 227, 0.8)',
+                          transform: 'scale(1.05)',
+                        }
+                      }}
+                    >
+                      <Avatar 
+                        sx={{ 
+                          bgcolor: theme.palette.secondary.main,
+                          color: theme.palette.secondary.contrastText,
+                          width: 32,
+                          height: 32,
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {getAvatarLetter()}
+                      </Avatar>
+                    </IconButton>
+                  </Tooltip>
+                  <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorEl}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    keepMounted
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    open={Boolean(anchorEl)}
+                    onClose={handleProfileMenuClose}
+                    PaperProps={{
+                      elevation: 3,
+                      sx: {
+                        mt: 1,
+                        borderRadius: 1,
+                        minWidth: 200,
+                        overflow: 'visible',
+                      },
+                    }}
+                  >
+                    <Box sx={{ px: 2, py: 1.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {getDisplayName()}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {getCookingSkillDisplay()}
+                      </Typography>
+                    </Box>
+                    <Divider />
+                    <MenuItem
+                      component={Link}
+                      to="/profile"
+                      onClick={handleProfileMenuClose}
+                      sx={{ py: 1.5, px: 2 }}
+                    >
+                      <ListItemIcon>
+                        <PersonIcon fontSize="small" color="primary" />
+                      </ListItemIcon>
+                      <ListItemText>Profile</ListItemText>
+                    </MenuItem>
+                    <MenuItem onClick={handleLogout} sx={{ py: 1.5, px: 2 }}>
+                      <ListItemIcon>
+                        <LogoutIcon fontSize="small" color="error" />
+                      </ListItemIcon>
+                      <ListItemText>Logout</ListItemText>
+                    </MenuItem>
+                  </Menu>
+                </>
+              ) : (
+                <Button 
+                  component={Link}
+                  to="/login"
+                  color="inherit" 
+                  variant="outlined"
+                  sx={{ 
+                    borderRadius: 1,
+                    borderColor: 'rgba(248, 244, 227, 0.5)',
+                    px: { xs: 2, sm: 3 },
+                    py: 0.8,
+                    minWidth: { xs: 70, sm: 85 },
+                    fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                    color: '#F8F4E3',
+                    transition: 'all 0.2s ease',
+                    '&:hover': {
+                      borderColor: 'rgba(248, 244, 227, 0.9)',
+                      backgroundColor: 'rgba(248, 244, 227, 0.15)',
+                      transform: 'scale(1.05)',
+                    }
+                  }}
+                >
+                  Login
+                </Button>
+              )}
             </Box>
           </Toolbar>
         </Container>

@@ -1,24 +1,27 @@
-import React, { useState } from 'react';
-import { Container, Typography, Box, TextField, Button, Paper, Link, Alert } from '@mui/material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Container, Typography, Box, TextField, Button, Paper, Link, Alert } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 
-const Login: React.FC = () => {
+export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
-  const { signIn } = useAuth();
-  const navigate = useNavigate();
+  const { signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    
     try {
-      await signIn(email, password);
-      // Navigation is handled in AuthContext after successful login
+      await signUp(email, password, fullName);
     } catch (err: any) {
-      setError(err.message || 'Failed to login. Please check your credentials.');
+      // Handle the case where user is already registered
+      if (err.message.toLowerCase().includes('user already registered')) {
+        setError('This email is already registered. Please login instead.');
+      } else {
+        setError(err.message);
+      }
     }
   };
 
@@ -27,14 +30,24 @@ const Login: React.FC = () => {
       <Box sx={{ mt: 8, mb: 4 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" component="h1" align="center" gutterBottom>
-            Login
+            Sign Up
           </Typography>
           <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 3 }}>
-            Sign in to your account
+            Create your account
           </Typography>
           
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert 
+              severity={error.includes('already registered') ? "info" : "error"} 
+              sx={{ mb: 2 }}
+              action={
+                error.includes('already registered') && (
+                  <Button color="inherit" size="small" component={RouterLink} to="/login">
+                    Login
+                  </Button>
+                )
+              }
+            >
               {error}
             </Alert>
           )}
@@ -44,11 +57,21 @@ const Login: React.FC = () => {
               margin="normal"
               required
               fullWidth
-              id="email"
+              label="Full Name"
+              name="fullName"
+              autoComplete="name"
+              autoFocus
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
               label="Email Address"
               name="email"
+              type="email"
               autoComplete="email"
-              autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -59,8 +82,7 @@ const Login: React.FC = () => {
               name="password"
               label="Password"
               type="password"
-              id="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -70,11 +92,11 @@ const Login: React.FC = () => {
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              Sign Up
             </Button>
             <Box sx={{ textAlign: 'center', mt: 2 }}>
-              <Link component={RouterLink} to="/signup" variant="body2">
-                {"Don't have an account? Sign Up"}
+              <Link component={RouterLink} to="/login" variant="body2">
+                Already have an account? Login
               </Link>
             </Box>
           </Box>
@@ -82,6 +104,4 @@ const Login: React.FC = () => {
       </Box>
     </Container>
   );
-};
-
-export default Login; 
+}

@@ -1,0 +1,15 @@
+{
+  "tests_run": 1,
+  "tests_passed": 0,
+  "tests_failed": 1,
+  "details": [
+    {
+      "test": "Database Connection",
+      "passed": false,
+      "details": {
+        "status_code": 500,
+        "response": "{\n  \"error\": \"Failed to connect to database\",\n  \"message\": \"Could not establish a database connection. Favorites will not be persisted.\",\n  \"success\": false,\n  \"usingMock\": true\n}\n"
+      }
+    }
+  ]
+}

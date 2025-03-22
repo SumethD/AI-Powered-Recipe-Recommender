@@ -665,4 +665,52 @@ def get_intolerances():
         "Alcohol", "Celery", "Crustacean", "Dairy", "Egg", "Fish", "Gluten", 
         "Grain", "Peanut", "Sesame", "Shellfish", "Soy", "Sulfite", "Tree Nut", 
         "Wheat"
-    ] 
+    ]
+
+def get_recipe_by_id(recipe_id):
+    """
+    Get recipe details by ID from Edamam API
+    
+    Args:
+        recipe_id (str): The Edamam recipe ID
+    
+    Returns:
+        dict: Recipe details or None if not found
+    """
+    try:
+        logger.info(f"Getting recipe details for ID: {recipe_id}")
+        
+        # Edamam recipe IDs are formatted as "recipe_{id}"
+        if not recipe_id.startswith('recipe_'):
+            recipe_id = f"recipe_{recipe_id}"
+        
+        # Construct the API URL
+        url = f"{EDAMAM_RECIPE_API_URL}/v2/{recipe_id}"
+        
+        # Add query parameters
+        params = {
+            "type": "public",
+            "app_id": EDAMAM_APP_ID,
+            "app_key": EDAMAM_API_KEY
+        }
+        
+        # Make the API request
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        
+        # Parse the response
+        data = response.json()
+        
+        # If the recipe is found, format it and return
+        if data:
+            return format_recipe(data)
+        else:
+            logger.warning(f"Recipe not found for ID: {recipe_id}")
+            return None
+            
+    except requests.RequestException as e:
+        logger.error(f"API request error getting recipe by ID: {str(e)}")
+        return None
+    except Exception as e:
+        logger.error(f"Error getting recipe by ID: {str(e)}")
+        return None 

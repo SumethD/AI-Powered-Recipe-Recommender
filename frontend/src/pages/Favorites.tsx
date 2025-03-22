@@ -35,6 +35,7 @@ import {
 import { useRecipes } from '../context/RecipeContext';
 import { Recipe } from '../context/RecipeContext';
 import { useUser } from '../context/UserContext';
+import { useAuth } from '../context/AuthContext';
 import RecipeCard from '../components/RecipeCard';
 import { styled } from '@mui/material/styles';
 
@@ -57,6 +58,7 @@ const DeleteButton = styled(IconButton)(({ theme }) => ({
 const Favorites: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useUser();
+  const { user: authUser } = useAuth();
   const { favorites, isLoading, error, toggleFavorite, loadFavorites } = useRecipes();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<string>('added_at');
@@ -64,10 +66,10 @@ const Favorites: React.FC = () => {
   const [filteredFavorites, setFilteredFavorites] = useState(favorites);
 
   useEffect(() => {
-    if (user) {
+    if (user && authUser) {
       loadFavorites();
     }
-  }, [user, loadFavorites]);
+  }, [user, authUser, loadFavorites]);
 
   useEffect(() => {
     // Filter favorites based on search term
@@ -129,7 +131,7 @@ const Favorites: React.FC = () => {
     toggleFavorite(recipe);
   };
 
-  if (!user) {
+  if (!user || !authUser) {
     return (
       <Container maxWidth="md">
         <Paper sx={{ p: 4, textAlign: 'center', my: 4 }}>
@@ -142,9 +144,9 @@ const Favorites: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/login')}
           >
-            Go to Home
+            Go to Login
           </Button>
         </Paper>
       </Container>
@@ -233,7 +235,7 @@ const Favorites: React.FC = () => {
       ) : (
         <Paper sx={{ p: 4, textAlign: 'center', my: 4 }}>
           <Typography variant="h6" gutterBottom>
-            No favorites yet
+            You have no favorite recipes yet
           </Typography>
           <Typography variant="body1" paragraph>
             Start exploring recipes and save your favorites!

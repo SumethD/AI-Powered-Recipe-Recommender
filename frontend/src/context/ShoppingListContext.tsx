@@ -49,6 +49,7 @@ export interface ShoppingListContextType {
   updateItemAmount: (itemId: string, amount: number) => void;
   removeItemFromList: (itemId: string) => void;
   isRecipeInList: (recipeId: number | string) => boolean;
+  addToShoppingList: (recipe: Recipe) => void;
 }
 
 // Create context
@@ -388,20 +389,24 @@ export const ShoppingListProvider = ({ children }: ShoppingListProviderProps) =>
     setShoppingList(prevList => prevList.filter(item => item.id !== itemId));
   };
   
+  // Context value
+  const contextValue: ShoppingListContextType = {
+    selectedRecipes,
+    shoppingList,
+    addRecipeToList,
+    removeRecipeFromList,
+    clearShoppingList,
+    generateShoppingList,
+    toggleItemChecked,
+    updateItemAmount,
+    removeItemFromList,
+    isRecipeInList,
+    addToShoppingList: addRecipeToList
+  };
+  
   return (
     <ShoppingListContext.Provider
-      value={{
-        selectedRecipes,
-        shoppingList,
-        addRecipeToList,
-        removeRecipeFromList,
-        clearShoppingList,
-        generateShoppingList,
-        toggleItemChecked,
-        updateItemAmount,
-        removeItemFromList,
-        isRecipeInList
-      }}
+      value={contextValue}
     >
       {children}
     </ShoppingListContext.Provider>

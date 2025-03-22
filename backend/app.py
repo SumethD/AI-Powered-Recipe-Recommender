@@ -10,14 +10,12 @@ from routes.chat_routes import chat_bp
 from routes.recipe_routes import recipe_bp
 from routes.video_routes import video_bp
 from routes.shopping_list_routes import shopping_list_bp
-from routes.auth_routes import auth_bp
-from functools import wraps
+from routes.saved_recipes_routes import saved_recipes_bp
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from recipe_instructions_service import get_recipe_instructions
 import traceback
 import datetime
-import requests
 
 # Add the current directory to the path to fix imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -46,53 +44,12 @@ logger = logging.getLogger("recipe_app")
 app = Flask(__name__)
 CORS(app)
 
-# Supabase configuration
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-
-# Authentication middleware
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        # Get auth token from header
-        auth_header = request.headers.get('Authorization')
-        
-        if not auth_header or not auth_header.startswith('Bearer '):
-            return jsonify({'message': 'Authentication token is missing!'}), 401
-        
-        token = auth_header.split(' ')[1]
-        
-        try:
-            # In a production environment, verify the token with Supabase
-            # For now, we'll simply accept any token format that looks valid
-            if len(token) < 20:  # Simple check for token length
-                return jsonify({'message': 'Invalid authentication token!'}), 401
-                
-            # You could verify the token with Supabase using their API:
-            # if SUPABASE_URL and SUPABASE_KEY:
-            #     response = requests.get(
-            #         f"{SUPABASE_URL}/auth/v1/user",
-            #         headers={
-            #             "Authorization": f"Bearer {token}",
-            #             "apikey": SUPABASE_KEY
-            #         }
-            #     )
-            #     if response.status_code != 200:
-            #         return jsonify({'message': 'Invalid authentication token!'}), 401
-            
-            return f(*args, **kwargs)
-        except Exception as e:
-            logger.error(f"Error verifying token: {str(e)}")
-            return jsonify({'message': 'Invalid authentication token!'}), 401
-            
-    return decorated
-
 # Register blueprints
 app.register_blueprint(recipe_bp, url_prefix='/api/recipes')
 app.register_blueprint(chat_bp, url_prefix='/api/chat')
 app.register_blueprint(video_bp, url_prefix='/api/videos')
 app.register_blueprint(shopping_list_bp, url_prefix='/api/shopping-list')
-app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(saved_recipes_bp)
 
 # Add a test endpoint to check if the edamam_service is being imported correctly
 @app.route('/api/test-edamam', methods=['GET'])
@@ -120,17 +77,6 @@ def test_edamam():
             "success": False,
             "message": f"Error testing Edamam API: {str(e)}"
         }), 500
-
-# Add a protected test endpoint
-@app.route('/api/protected-test', methods=['GET'])
-@token_required
-def protected_test():
-    """Protected test endpoint that requires authentication"""
-    return jsonify({
-        "success": True,
-        "message": "You have access to this protected resource",
-        "timestamp": datetime.datetime.now().isoformat()
-    })
 
 # Add a test endpoint to check if the recipe_service is being used correctly
 @app.route('/api/test-recipe-service', methods=['GET'])

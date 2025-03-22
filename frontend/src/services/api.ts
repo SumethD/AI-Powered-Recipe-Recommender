@@ -335,11 +335,88 @@ export const chatApi = {
   },
 };
 
+// Saved Recipes API
+export const savedRecipesApi = {
+  // Get saved recipe IDs
+  getSavedRecipeIds: async (userId: string) => {
+    try {
+      console.log(`Getting saved recipe IDs for user: ${userId}`);
+      const response = await api.get('/saved-recipes', {
+        params: { user_id: userId }
+      });
+      
+      console.log('Saved recipe IDs response:', response.data);
+      
+      if (response.data && response.data.success && response.data.recipe_ids) {
+        return response.data.recipe_ids;
+      } else {
+        console.error('Unexpected response format:', response.data);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error getting saved recipe IDs:', error);
+      throw error;
+    }
+  },
+
+  // Get recipe details for a batch of IDs
+  getRecipeBatch: async (recipeIds: string[]) => {
+    try {
+      console.log(`Getting recipe details for ${recipeIds.length} IDs`);
+      const response = await api.post('/recipes/batch', { recipe_ids: recipeIds });
+      
+      console.log('Recipe batch response:', response.data);
+      
+      if (response.data && response.data.success && response.data.recipes) {
+        return response.data.recipes;
+      } else {
+        console.error('Unexpected response format:', response.data);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error getting recipe batch:', error);
+      throw error;
+    }
+  },
+
+  // Save a recipe
+  saveRecipe: async (userId: string, recipeId: string) => {
+    try {
+      console.log(`Saving recipe ${recipeId} for user ${userId}`);
+      const response = await api.post('/saved-recipes', {
+        user_id: userId,
+        recipe_id: recipeId
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error saving recipe:', error);
+      throw error;
+    }
+  },
+
+  // Remove a saved recipe
+  removeSavedRecipe: async (userId: string, recipeId: string) => {
+    try {
+      console.log(`Removing saved recipe ${recipeId} for user ${userId}`);
+      const response = await api.delete(`/saved-recipes/${recipeId}`, {
+        params: { user_id: userId }
+      });
+      
+      return response.data;
+    } catch (error) {
+      console.error('Error removing saved recipe:', error);
+      throw error;
+    }
+  }
+};
+
 // Create a default export object
 const apiService = {
   recipeApi,
   userApi,
   chatApi,
+  savedRecipesApi,
 };
 
 export default apiService; 
