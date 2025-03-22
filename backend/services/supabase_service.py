@@ -11,8 +11,21 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Get Supabase credentials from environment variables
-SUPABASE_URL = os.getenv('REACT_APP_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('REACT_APP_SUPABASE_ANON_KEY')
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
+
+# Log status (without showing the full key for security reasons)
+logger.info(f"Supabase URL: {SUPABASE_URL}")
+if SUPABASE_KEY:
+    key_preview = SUPABASE_KEY[:5] + "..." if len(SUPABASE_KEY) > 5 else "INVALID"
+    logger.info(f"Supabase Key: {key_preview}")
+else:
+    logger.warning("Supabase Key not found in environment variables")
+
+# Validate configuration
+if not SUPABASE_URL or not SUPABASE_KEY:
+    logger.error("Supabase URL or Key not configured correctly")
+    raise ValueError("Missing Supabase configuration. Check your .env file.")
 
 # Initialize Supabase client
 supabase_client = supabase.create_client(SUPABASE_URL, SUPABASE_KEY)
